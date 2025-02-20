@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chess board</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+<body>
+  <h1>Chess Board</h1>
+  <div class="container">
+    <div class="chessboard">
+      <div class="chessboard-cells">
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+        <div class="black cell"></div>
+        <div class="white cell"></div>
+      </div>
+      <div id="pieces" class="chessboard-pieces">
+      </div>
+    </div>
+    <div class="fen-input-box">
+      <span>FEN</span>
+      <input id="fen-input" type="text" placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">
+      <i id="fen-copy" class="fa fa-copy"></i>
+    </div>
+    <div class="controls">
+      <button id="btn-starting-position">Starting position</button>
+      <button id="btn-clear-board">Clear board</button>
+      <button id="btn-best-white-opening">Best white opening</button>
+      <button id="btn-worst-white-opening">Worst white opening</button>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
