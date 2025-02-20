@@ -24,6 +24,7 @@ body {
   position: relative;
   border: 2px solid var(--chessboard-border);
   width: 55vh;
+  max-width: 90vw;
   aspect-ratio: 1;
 }
 
@@ -83,6 +84,7 @@ body {
   overflow: hidden;
   align-items: center;
   background-color: var(--fen-background);
+  width: min(50em, 95%);
 }
 
 .fen-input-box > span {
@@ -97,7 +99,7 @@ body {
   border: none;
   border-radius: 5px;
   height: 90%;
-  width: 45em;
+  width: 100%;
 }
 
 .fen-input-box > i {
