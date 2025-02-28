@@ -1,7 +1,10 @@
 :root {
   --background: rgb(252, 232, 174);
   --white-cell: rgb(252, 255, 237);
+  --white-cell-selected: rgb(180, 209, 165);
   --black-cell: rgb(112, 158, 120);
+  --black-cell-selected: rgb(81, 115, 88);
+  --possible-move: rgb(0, 132, 184);
   --chessboard-border: rgb(112, 89, 50);
   --fen-background: rgb(234, 235, 230);
   --fen-copy-icon-hover: rgb(217, 219, 206);
@@ -26,32 +29,45 @@ body {
   width: 55vh;
   max-width: 90vw;
   aspect-ratio: 1;
-}
-
-.chessboard-cells, .chessboard-pieces {
-  position: absolute;
-  top: 0;
-  width: 100%;
-  height: 100%;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
+  align-items: center;
+  justify-items: center;
 }
 
-.chessboard-cells div, .chessboard-pieces div {
+.chessboard div {
   width: 100%;
   height: 100%;
 }
 
-.cell.white {
+.chessboard .cell.white {
   background-color: var(--white-cell);
 }
-.cell.black {
+
+.chessboard .cell.white.selected {
+  background-color: var(--white-cell-selected);
+}
+
+.chessboard .cell.black {
   background-color: var(--black-cell);
 }
 
-.king, .queen, .rook, .knight, .bishop, .pawn {
+.chessboard .cell.black.selected {
+  background-color: var(--black-cell-selected);
+}
+
+.chessboard .possible-move {
+  width: 20%;
+  height: 20%;
+  border-radius: 50%;
+  background-color: var(--possible-move);
+  pointer-events: none;
   z-index: 999;
+}
+
+.king, .queen, .rook, .knight, .bishop, .pawn {
+  z-index: 99;
   background-size: cover;
 }
 
@@ -107,6 +123,7 @@ body {
   align-items: center;
   padding: 0 0.6em;
   height: 100%;
+  border-radius: 5px;
 }
 
 .controls button {
@@ -126,4 +143,8 @@ body {
 }
 .fen-input-box > i:active, .controls button:active {
   background-color: var(--fen-copy-icon-active);
+}
+
+.chessboard div *:hover {
+  background-color: green;
 }
