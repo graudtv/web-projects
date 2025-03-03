@@ -18,34 +18,6 @@ const userData = {
   pgnMoveIndex: null,
 };
 
-class ChessBoardCoords {
-  consturctor(row, column) {
-    if (row < 1 || row > 8 || column < 1 || column > 8)
-      throw new Error(`invalid coords (row = ${row}, column = ${column})`);
-    this.row = row;
-    this.column = column;
-  }
-
-  static fromString(str) {
-    if (str.length == 2) {
-      const column = 'abcdefgh'.split('').indexOf(str[0]) + 1;
-      const row = '87654321'.split('').indexOf(str[1]) + 1;
-      if (row > 0 && column > 0) {
-        return new ChessBoardCoords(row, column);
-      }
-    }
-    throw new Error(`invalid coords 'str'`);
-  }
-
-  toString() {
-    return 'abcdefgh'[this.column - 1] + (9 - this.row);
-  }
-
-  toArray() {
-    return [row, column]
-  }
-}
-
 class ChessBoard {
   constructor(FEN) {
     this.FEN = FEN;
@@ -123,7 +95,7 @@ class ChessBoard {
   }
 
   makeMove(mv) {
-    const {srcRow, srcColumn, dstRow, dstColumn, pawnPromotion} = mv;
+    const {srcRow, srcColumn, dstRow, dstColumn, promotionTarget} = mv;
 
     const targetPiece = this.getPiece(dstRow, dstColumn);
     const srcPiece = this.getPiece(srcRow, srcColumn);
@@ -140,7 +112,7 @@ class ChessBoard {
       /* take enemy's pawn */
       this.setPiece(srcRow, dstColumn, null);
     } else if (isPawnPromotion) {
-      this.setPiece(dstRow, dstColumn, pawnPromotion);
+      this.setPiece(dstRow, dstColumn, makePiece(promotionTarget || 'Q', getPieceColor(srcPiece)));
     } else if (isCastling) {
       if (dstColumn > srcColumn) {
         /* Assume regular position of rooks */
@@ -182,7 +154,7 @@ class ChessBoard {
     const piece = getPiece(row, column);
 
     if (!piece)
-      throw new Error(`no piece at ${piece_coords} for board ${this}`)
+      throw new Error(`no piece at ${pieceCoords} for board`, this)
 
     const pieceColor = getPieceColor(piece);
     const isEnemy = (r, c) => {
@@ -305,6 +277,21 @@ class ChessBoard {
       }
     }
 
+    if ((piece === 'P' && row == 2) || (piece === 'p' && row == 7)) {
+      return moves.map(([dstRow, dstColumn]) => {
+        return 'QRBN'.split('').map(promotion => {
+          return {
+            srcPiece: piece,
+            srcRow: row,
+            srcColumn: column,
+            dstRow: dstRow,
+            dstColumn: dstColumn,
+            promotionTarget: promotion
+          }
+        });
+      }).flat();
+    }
+
     return moves.map(([dstRow, dstColumn]) => {
       return {
         srcPiece: piece,
@@ -321,28 +308,50 @@ class ChessBoard {
       .map(({dstRow, dstColumn}) => coordsToString(dstRow, dstColumn));
   }
 
-  getPiecesByColor(color) {
+  getLegalMoveTargets(pieceCoordsStr) {
+    return [...this.getLegalMoves(stringToCoords(pieceCoordsStr))
+      .map(({dstRow, dstColumn}) => coordsToString(dstRow, dstColumn))];
+  }
+
+  getPiecesOfColor(color) {
     return this.getPieces().filter(({row, column, piece}) => {
       return getPieceColor(piece) === color;
     });
   }
 
   getAllPossibleMoves() {
-    return this.getPiecesByColor(this.activeColor).reduce((moveList, {row, column, piece}) => {
+    return this.getPiecesOfColor(this.activeColor).reduce((moveList, {row, column, piece}) => {
       return moveList.concat(this.getPossibleMoves([row, column]))
     }, []);
     return [].concat(...allMoves);
   }
 
-  /*
-  getAllLegalMoves() {
-    for (mv of getAllPossibleMoves()) {
-      let boardCopy = new ChessBoard(this.FEN);
-      boardCopy.movePiece([mv.srcRow, mv.srcColumn], [mv.dstRow, mv.dstColumn]);
-      const attacks = boardCopy.getAllPossibleMoves();
+  /* List of moves which threaten to capture some piece (except for
+   * en-passant) */
+  getAllThreats() {
+    return this.getAllPossibleMoves().filter(({dstRow, dstColumn}) => {
+      return this.getPiece(dstRow, dstColumn) != null;
+    });
+  }
+
+  *getLegalMoves(pieceCoords) {
+    for (const mv of this.getPossibleMoves(pieceCoords)) {
+      const boardCopy = new ChessBoard(this.FEN);
+      boardCopy.makeMove(mv);
+      const king = boardCopy.getPiecesOfColor(this.activeColor).find(({piece}) => piece.toUpperCase() === 'K');
+      const kingCoords = coordsToString(king.row, king.column);
+      console.log("considering move", mv.srcPiece, coordsToString(mv.srcRow, mv.srcColumn), "->", coordsToString(mv.dstRow, mv.dstColumn));
+      console.log("active king", kingCoords);
+      const attacks = boardCopy.getAllThreats().map(m => coordsToString(m.dstRow, m.dstColumn));
+      console.log("attacks", attacks);
+      if (!attacks.includes(kingCoords)) {
+        console.log("move", mv, "IS legal");
+        yield mv;
+      } else {
+        console.log("move", mv, "is NOT legal");
+      }
     }
   }
-  */
 
   resolveMove(moveNotation) {
     const move = moveNotation.replace('x', '').replace('+', '');
@@ -353,22 +362,24 @@ class ChessBoard {
     let srcColumn = undefined;
     let dstRow = undefined;
     let dstColumn = undefined;
-    let dstTarget = undefined;
+    let promotionTarget = undefined;
 
     let match = null;
 
-    if ((match = move.match(/^([a-h])([1-8])$/))) {
+    if ((match = move.match(/^([a-h])([1-8])(=([QRNB]))?$/))) {
       /* e.g. d4 */
       srcPiece = 'P';
       dstColumn = match[1];
       dstRow = match[2];
-    } else if ((match = move.match(/^([a-h])([1-8]?)([a-h])([1-8]?)$/))) {
+      promotionTarget = match[4];
+    } else if ((match = move.match(/^([a-h])([1-8]?)([a-h])([1-8]?)(=([QRNB]))?$/))) {
       /* e.g. d2d4 */
       srcPiece = 'P';
       srcColumn = match[1];
       srcRow = match[2];
       dstColumn = match[3];
       dstRow = match[4];
+      promotionTarget = match[6];
     } else if ((match = move.match(/^([RNBKQ])([1-8a-h])?([a-h])([1-8])$/))) {
       /* Nf6, Ngf6, N1f6 */
       srcPiece = match[1];
@@ -391,7 +402,7 @@ class ChessBoard {
         return mv.srcPiece.toUpperCase() == 'K' && mv.srcColumn - mv.dstColumn > 1;
       });
     } else {
-      throw new Error(`invalid move ${move}`)
+      throw new Error(`invalid move notation '${move}'`)
     }
 
     if (srcPiece) {
@@ -413,13 +424,15 @@ class ChessBoard {
       const dstRowIdx = '87654321'.indexOf(dstRow) + 1;
       moves = moves.filter(mv => (mv.dstRow === dstRowIdx));
     }
+    if (promotionTarget) {
+      moves = moves.filter(mv => (mv.promotionTarget === promotionTarget));
+    }
 
     if (moves.length === 1) {
       console.log(move, "OK!");
     } else {
-      console.log(`illegal/ambiguous move ${move}. FEN: '${this.FEN}', candidates: ${moves}`);
-      //console.log('FEN', this.FEN);
-      //console.log("filter", srcPiece, srcColumn, srcRow, dstColumn, dstRow);
+      console.log(`illegal/ambiguous move ${move}. FEN: '${this.FEN}', candidates`, moves);
+      console.log(`filter: srcPiece '${srcPiece}' srcColumn '${srcColumn}' srcRow ${srcRow} dstColumn ${dstColumn} dstRow ${dstRow} promotion ${promotionTarget}`);
     }
     if (moves.length === 0) {
       throw new Error(`move ${move} is not legal in current position`);
@@ -433,6 +446,10 @@ class ChessBoard {
 
 function getFEN() {
   return FENInput.value || FENInput.placeholder;
+}
+
+function makePiece(letter, color) {
+  return (color === 'w') ? letter.toUpperCase() : letter.toLowerCase();
 }
 
 function getPieceColor(letter) {
@@ -486,7 +503,7 @@ function deselectSelectedCell() {
 function handleClick(row, column) {
   const pos = coordsToString(row, column)
 
-  if (userData.selectedCell && userData.board.getPossibleMoveTargets(userData.selectedCell).includes(pos)) {
+  if (userData.selectedCell && userData.board.getLegalMoveTargets(userData.selectedCell).includes(pos)) {
     /* Move piece and update UI */
     coords = stringToCoords(userData.selectedCell)
     userData.board.makeMove({
@@ -494,7 +511,7 @@ function handleClick(row, column) {
       srcColumn: coords[1],
       dstRow: row,
       dstColumn: column,
-      pawnPromotion: null
+      promotionTarget: 'Q'
     });
     $(FENInput).val(userData.board.FEN);
     userData.selectedCell = null;
@@ -508,7 +525,7 @@ function handleClick(row, column) {
       userData.selectedCell = pos;
 
       /* Show possible moves */
-      for ({dstRow, dstColumn} of userData.board.getPossibleMoves(stringToCoords(pos))) {
+      for ({dstRow, dstColumn} of userData.board.getLegalMoves(stringToCoords(pos))) {
         $(mainBoard).append(`<div class="possible-move" style="grid-column: ${dstColumn}; grid-row: ${dstRow}"> </div>`);
       }
     }
