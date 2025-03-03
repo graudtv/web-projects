@@ -9,6 +9,12 @@
   --fen-background: rgb(234, 235, 230);
   --fen-copy-icon-hover: rgb(217, 219, 206);
   --fen-copy-icon-active: rgb(186, 186, 182);
+
+  --pgn-table-border: var(--chessboard-border);
+  --pgn-table-th: rgb(188, 232, 225);
+  --pgn-table-td: rgb(214, 217, 197);
+  --pgn-table-td-hover: rgb(171, 173, 160);
+  --pgn-table-td-active: rgb(198, 201, 181);
 }
 
 * {
@@ -90,6 +96,48 @@ body {
   justify-content: center;
   align-items: center;
   gap: 30px 50px;
+}
+
+.horizontal-container {
+  display: flex;
+  gap: 0px 50px;
+  align-items: flex-start;
+  height: 55vh;
+}
+
+.pgn-table-wrapper {
+  overflow: auto;
+  scrollbar-color: grey var(--pgn-table-td);
+  height: 100%;
+}
+
+.pgn-table {
+  table-layout: fixed;
+  border-collapse: collapse;
+  background-color: var(--pgn-table-td);
+  width: 250px;
+}
+
+.pgn-table th, .pgn-table td {
+  height: 2em;
+}
+.pgn-table th {
+  width: 20%;
+  font-style: italic;
+  background-color: var(--pgn-table-th);
+}
+.pgn-table td {
+  padding: 0 1em;
+  width: 40%;
+  cursor: pointer;
+}
+
+.pgn-table td:hover {
+  background-color: var(--pgn-table-td-hover);
+}
+.pgn-table td.active {
+  background-color: var(--pgn-table-td-active);
+  font-weight: bold;
 }
 
 .fen-input-box {
