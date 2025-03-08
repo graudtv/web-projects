@@ -2,25 +2,13 @@ const params = new URLSearchParams(document.location.search);
 const FENUrlParam = params.get('FEN');
 const FENInput = document.getElementById('fen-input');
 const FENCopyButton = document.getElementById('fen-copy');
-const mainBoard = document.getElementById('main-board');
-const mainPGNTable = document.getElementById('main-pgn-table');
 
 const initialPositionFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const emptyBoardFEN = '8/8/8/8/8/8/8/8 w - - 0 1';
 
-/* enable/disable free move feature */
-const freeMoveEnabled = false;
-
-const userData = {
-  board: null,
-  selectedCell: null,
-  pgn: null,
-  pgnMoveIndex: null,
-};
-
 class ChessBoard {
   constructor(FEN) {
-    this.FEN = FEN;
+    this.FEN = FEN || emptyBoardFEN;
   }
 
   set FEN(str) {
@@ -323,7 +311,6 @@ class ChessBoard {
     return this.getPiecesOfColor(this.activeColor).reduce((moveList, {row, column, piece}) => {
       return moveList.concat(this.getPossibleMoves([row, column]))
     }, []);
-    return [].concat(...allMoves);
   }
 
   /* List of moves which threaten to capture some piece (except for
@@ -345,10 +332,7 @@ class ChessBoard {
       const attacks = boardCopy.getAllThreats().map(m => coordsToString(m.dstRow, m.dstColumn));
       console.log("attacks", attacks);
       if (!attacks.includes(kingCoords)) {
-        console.log("move", mv, "IS legal");
         yield mv;
-      } else {
-        console.log("move", mv, "is NOT legal");
       }
     }
   }
@@ -380,19 +364,13 @@ class ChessBoard {
       dstColumn = match[3];
       dstRow = match[4];
       promotionTarget = match[6];
-    } else if ((match = move.match(/^([RNBKQ])([1-8a-h])?([a-h])([1-8])$/))) {
+    } else if ((match = move.match(/^([RNBKQ])([a-h])?([1-8])?([a-h])([1-8])$/))) {
       /* Nf6, Ngf6, N1f6 */
       srcPiece = match[1];
-      const specifier = match[2];
-      if (specifier) {
-        if ('12345678'.includes(specifier)) {
-          srcRow = specifier;
-        } else {
-          srcColumn = specifier;
-        }
-      }
-      dstColumn = match[3];
-      dstRow = match[4];
+      srcColumn = match[2];
+      srcRow = match[3];;
+      dstColumn = match[4];
+      dstRow = match[5];
     } else if (move.match('^[0O]-[0O]$')) {
       moves = moves.filter(mv => {
         return mv.srcPiece.toUpperCase() == 'K' && mv.dstColumn - mv.srcColumn > 1;
@@ -485,7 +463,6 @@ function stringToCoords(str) {
   return undefined;
 }
 
-
 function movesToFEN(moves) {
   const board = new ChessBoard(initialPositionFEN);
   for (mv of moves) {
@@ -494,132 +471,249 @@ function movesToFEN(moves) {
   return board.FEN;
 }
 
-function deselectSelectedCell() {
-  $(mainBoard).children('.possible-move').remove();
-  $(mainBoard).children('.selected').removeClass('selected');
-  userData.selectedCell = null;
+function getMoveNotation(mv) {
+  const {srcRow, srcColumn, srcPiece, dstRow, dstColumn, promotionTarget} = mv;
+  const piece = (srcPiece.toUpperCase() !== 'P') ? srcPiece.toUpperCase() : '';
+  const srcCoords = coordsToString(srcRow, srcColumn);
+  const dstCoords = coordsToString(dstRow, dstColumn);
+  return piece + srcCoords + dstCoords;
 }
 
-function handleClick(row, column) {
-  const pos = coordsToString(row, column)
+class ChessBoardUI {
+  moveEventListeners = []
 
-  if (userData.selectedCell && userData.board.getLegalMoveTargets(userData.selectedCell).includes(pos)) {
-    /* Move piece and update UI */
-    coords = stringToCoords(userData.selectedCell)
-    userData.board.makeMove({
-      srcRow: coords[0],
-      srcColumn: coords[1],
-      dstRow: row,
-      dstColumn: column,
-      promotionTarget: 'Q'
-    });
-    $(FENInput).val(userData.board.FEN);
-    userData.selectedCell = null;
-    renderBoard();
-  } else {
-    deselectSelectedCell();
-    const selectedPiece = userData.board.pieces[row - 1][column - 1];
-    if (freeMoveEnabled || (selectedPiece && userData.board.activeColor === getPieceColor(selectedPiece))) {
-      /* Highlight selected square */
-      $(mainBoard).children(`.cell[value="${pos}"]`).addClass('selected');
-      userData.selectedCell = pos;
+  constructor(elementId) {
+    this.board = new ChessBoard();
+    this.$boardElem = $(`#${elementId}`)
+    this.selectedCell = null;
+  }
 
-      /* Show possible moves */
-      for ({dstRow, dstColumn} of userData.board.getLegalMoves(stringToCoords(pos))) {
-        $(mainBoard).append(`<div class="possible-move" style="grid-column: ${dstColumn}; grid-row: ${dstRow}"> </div>`);
+  deselectSelectedCell() {
+    this.$boardElem.children('.possible-move').remove();
+    this.$boardElem.children('.selected').removeClass('selected');
+    this.selectedCell = null;
+  }
+
+  handleClick(row, column) {
+    const pos = coordsToString(row, column)
+
+    if (this.selectedCell && this.board.getLegalMoveTargets(this.selectedCell).includes(pos)) {
+      /* Legal move. Move piece and update UI */
+      const srcCoords = stringToCoords(this.selectedCell)
+      const mv = {
+        srcRow: srcCoords[0],
+        srcColumn: srcCoords[1],
+        srcPiece: this.board.getPiece(srcCoords[0], srcCoords[1]),
+        dstRow: row,
+        dstColumn: column,
+        promotionTarget: 'Q'
+      };
+      this.board.makeMove(mv);
+      this.selectedCell = null;
+      this.render();
+      for (const listener of this.moveEventListeners)
+        listener(mv);
+    } else {
+      this.deselectSelectedCell();
+      const selectedPiece = this.board.getPiece(row, column);
+      if (selectedPiece && this.board.activeColor === getPieceColor(selectedPiece)) {
+        /* Highlight selected square */
+        this.$boardElem.children(`.cell[value="${pos}"]`).addClass('selected');
+        this.selectedCell = pos;
+
+        /* Show possible moves */
+        for (const {dstRow, dstColumn} of this.board.getLegalMoves([row, column])) {
+          this.$boardElem.append(
+            $('<div class="possible-move"></div>').css({'grid-row': dstRow, 'grid-column': dstColumn})
+          );
+        }
       }
     }
   }
-}
 
-function createCell(row, column) {
-  const color = ((row + column) % 2 == 0) ? "white" : "black";
-  const pos = coordsToString(row, column);
-  return `<div class="${color} cell" value="${pos}" style="grid-column: ${column}; grid-row: ${row}" onclick="handleClick(${row}, ${column})"></div>`;
-}
+  render() {
+    const createPiece = (piece, row, column) => {
+      if (piece !== null) {
+        this.$boardElem.append(
+          $('<div></div>').addClass(getPieceClass(piece))
+                          .val(coordsToString(row, column))
+                          .css({ 'grid-row': row, 'grid-column': column})
+                          .click(() => { this.handleClick(row, column); })
+        );
+      }
+    }
+    const createCell = (row, column) => {
+      const color = ((row + column) % 2 == 0) ? "white" : "black";
+      this.$boardElem.append(
+        $('<div></div>').addClass(color).addClass('cell')
+                        .val(coordsToString(row, column))
+                        .css({ 'grid-row': row, 'grid-column': column})
+                        .click(() => { this.handleClick(row, column); })
+      );
+    }
 
-function createPiece(piece, row, column) {
-  if (piece === null) {
-    return '';
-  }
-  const pos = coordsToString(row, column);
-  return `<div class="${getPieceClass(piece)}" value="${pos}" style="grid-column: ${column}; grid-row: ${row}" onclick="handleClick(${row}, ${column})"></div>`;
-}
-
-function renderBoard() {
-  const board = userData.board;
-  let innerHTML = '';
-
-  for (let i = 0; i < 8; ++i) {
-    for (let j = 0; j < 8; ++j) {
-      innerHTML += createCell(i + 1, j + 1);
-      innerHTML += createPiece(board.pieces[i][j], i + 1, j + 1);
+    this.$boardElem.empty();
+    for (let i = 0; i < 8; ++i) {
+      for (let j = 0; j < 8; ++j) {
+        createCell(i + 1, j + 1);
+        createPiece(this.board.pieces[i][j], i + 1, j + 1);
+      }
     }
   }
-  mainBoard.innerHTML = innerHTML;
-}
 
-function setFEN(FEN) {
-  $(FENInput).val(FEN);
-  userData.board = new ChessBoard(FEN);
-  renderBoard();
-}
-
-function resetToFEN(FEN) {
-  setFEN(FEN);
-  userData.pgn = null;
-  userData.pgnMoveIndex = null;
-  resetPGNTable([]);
-}
-
-function resetToPGN(pgn) {
-  resetToFEN(movesToFEN(pgn));
-  resetPGNTable(pgn);
-  userData.pgn = pgn;
-  userData.pgnMoveIndex = pgn.length - 1;
-  setActiveMoveInPGNTable();
-}
-
-function jumpToMove(moveIdx) {
-  userData.pgnMoveIndex = moveIdx;
-  setActiveMoveInPGNTable();
-  setFEN(movesToFEN(userData.pgn.slice(0, moveIdx + 1)));
-}
-
-function resetPGNTable(moves) {
-  let html = '';
-  for (let i = 0; i < moves.length; i += 2) {
-    const fullmove = i / 2 + 1;
-    const whiteMove = moves[i];
-    const blackData = moves[i + 1] ? `<td onclick="jumpToMove(${i + 1})">${moves[i + 1]}</td>` : '';
-    html += `
-      <tr>
-        <th>${fullmove}</th>
-        <td onclick="jumpToMove(${i})">${whiteMove}</td>
-        ${blackData}
-      </tr>
-    `;
+  resetToFEN(FEN) {
+    this.board.FEN = FEN;
+    this.selectedCell = null;
+    this.render();
   }
-  $(mainPGNTable).html(html)
+
+  /* Example: boardUI.addMoveEventListener((mv) => { ... }) */
+  addMoveEventListener(listener) {
+    this.moveEventListeners.push(listener);
+  }
 }
 
-function setActiveMoveInPGNTable() {
-  const idx = userData.pgnMoveIndex;
-  $(mainPGNTable).find('td').removeClass('active');
-  $(mainPGNTable).find(`tr:nth-child(${Math.floor(idx / 2) + 1}) td:nth-of-type(${idx % 2 + 1})`).addClass('active');
-  wrapper = $(mainPGNTable).parent().get(0);
-  const ratio = Math.floor(idx / 2) / Math.floor(userData.pgn.length / 2);
-  wrapper.scrollTo(0, wrapper.scrollHeight * ratio);
-  //wrapper.scrollTo(0, Math.floor(wrapper.scrollHeight * (idx / userData.pgn.length)));
+class SimpleMoveTableUI {
+  moves = []
+  curMoveIndex = 0;
+  moveEventListeners = [];
+
+  constructor(elementId) {
+    this.$tableElem = $(`#${elementId}`);
+  }
+
+  reset(moveList=[]) {
+    this.moves = moveList;
+    this.curMoveIndex = 0;
+    this.render();
+  }
+
+  render() {
+    const handleClick = (moveIndex) => {
+      const prevIndex = this.curMoveIndex;
+      this.setCurrentMove(moveIndex);
+      if (prevIndex !== this.curMoveIndex)
+        for (const listener of this.moveEventListeners)
+          listener(moveIndex);
+    };
+
+    this.$tableElem.empty();
+    for (let i = 0; i < this.moves.length; i += 2) {
+      const tr = $('<tr></tr>');
+      tr.append(`<th>${i / 2 + 1}</th>`);
+      tr.append($(`<td>${this.moves[i]}</td>`).click(() => {handleClick(i)}));
+      if (this.moves[i + 1])
+        tr.append($(`<td>${this.moves[i + 1]}</td>`).click(() => {handleClick(i + 1)}));
+      this.$tableElem.append(tr);
+    }
+    this.setCurrentMove(this.curMoveIndex);
+  }
+
+  constrainMoveIndex(moveIndex) {
+    if (moveIndex < 0 || this.moves.length === 0)
+      return 0;
+    if (moveIndex >= this.moves.length)
+      return this.moves.length - 1;
+    return moveIndex;
+  }
+
+  getCurrentMoveIndex() {
+    return this.curMoveIndex;
+  }
+
+  setCurrentMove(moveIndex) {
+    const prevIndex = this.curMoveIndex;
+    moveIndex = this.constrainMoveIndex(moveIndex);
+    this.$tableElem.find('td').removeClass('active');
+    this.$tableElem.find(`tr:nth-child(${Math.floor(moveIndex / 2) + 1}) td:nth-of-type(${moveIndex % 2 + 1})`).addClass('active');
+    this.curMoveIndex = moveIndex;
+  }
+
+  focusTop(moveIndex) {
+    if (this.moves.length === 0)
+      return;
+    moveIndex = this.constrainMoveIndex(moveIndex);
+    const $wrapper = this.$tableElem.parent();
+    const $td = this.$tableElem.find('td').eq(moveIndex);
+    const tdTop = $td.position().top;
+    $wrapper.get(0).scrollTo(0, tdTop);
+  }
+
+  focusBottom(moveIndex) {
+    if (this.moves.length === 0)
+      return;
+    moveIndex = this.constrainMoveIndex(moveIndex);
+    const $wrapper = this.$tableElem.parent();
+    const $td = this.$tableElem.find('td').eq(moveIndex);
+    const tdBottom = $td.position().top + $td.height();
+    $wrapper.get(0).scrollTo(0, tdBottom - $wrapper.height());
+  }
+
+  isFullyVisible(moveIndex) {
+    if (this.moves.length === 0)
+      return true;
+    moveIndex = this.constrainMoveIndex(moveIndex);
+    const $wrapper = this.$tableElem.parent();
+    const wrapper = $wrapper.get(0);
+    const $td = this.$tableElem.find('td').eq(moveIndex);
+    const tdTop = $td.position().top;
+    const tdBottom = $td.position().top + $td.height();
+    return tdTop >= wrapper.scrollTop && tdBottom <= wrapper.scrollTop + $wrapper.height();
+  }
+
+  gotoNextMove() {
+    this.setCurrentMove(this.curMoveIndex + 1);
+    if (!this.isFullyVisible(this.curMoveIndex))
+      this.focusBottom(this.curMoveIndex);
+  }
+
+  gotoPrevMove() {
+    this.setCurrentMove(this.curMoveIndex - 1);
+    if (!this.isFullyVisible(this.curMoveIndex))
+      this.focusTop(this.curMoveIndex);
+  }
+
+  pushMove(mv) {
+    this.moves = this.moves.slice(0, this.curMoveIndex + 1);
+    this.moves.push(mv);
+    this.curMoveIndex += 1;
+    this.render();
+    this.focusBottom(this.curMoveIndex);
+  }
+
+  /* Example: tableUI.addMoveEventListener((moveIndex) => { ... }) */
+  addMoveEventListener(listener) {
+    this.moveEventListeners.push(listener);
+  }
 }
 
 $(document).ready(() => {
+  const mainBoard = new ChessBoardUI('main-board');
+  const mainMoveTable = new SimpleMoveTableUI('main-pgn-table');
+
+  const resetToFEN = (FEN) => {
+    $(FENInput).val(FEN);
+    mainBoard.resetToFEN(FEN);
+    mainMoveTable.reset();
+  };
+
+  const resetToPGN = (moveList) => {
+    const FEN = movesToFEN(moveList);
+    $(FENInput).val(FEN);
+    mainBoard.resetToFEN(FEN);
+    mainMoveTable.reset(moveList);
+    mainMoveTable.setCurrentMove(moveList.length - 1);
+    mainMoveTable.focusBottom(moveList.length - 1);
+  }
+
   $('#btn-starting-position').click(() => {
     resetToFEN(initialPositionFEN);
   });
+
   $('#btn-clear-board').click(() => {
     resetToFEN(emptyBoardFEN);
   });
+
   $('#btn-random-puzzle').click(() => {
     //const puzzleId = "Pvv9d";
     const puzzleId = "next";
@@ -635,11 +729,25 @@ $(document).ready(() => {
   $('#fen-input').on('input', () => {
     resetToFEN(getFEN());
   });
-  resetToFEN(FENUrlParam ? FENUrlParam : getFEN());
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'ArrowRight' && userData.pgnMoveIndex !== null && userData.pgnMoveIndex + 1 < userData.pgn.length)
-      jumpToMove(userData.pgnMoveIndex + 1);
-    else if (e.code === 'ArrowLeft' && userData.pgnMoveIndex !== null && userData.pgnMoveIndex > 0)
-      jumpToMove(userData.pgnMoveIndex - 1);
+
+  mainMoveTable.addMoveEventListener(idx => {
+    const FEN = movesToFEN(mainMoveTable.moves.slice(0, idx + 1));
+    mainBoard.resetToFEN(FEN);
+    $(FENInput).val(FEN);
   })
+
+  mainBoard.addMoveEventListener(mv => {
+    mainMoveTable.pushMove(getMoveNotation(mv));
+    $(FENInput).val(mainBoard.board.FEN);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'ArrowRight') {
+      mainMoveTable.gotoNextMove();
+    } else if (e.code === 'ArrowLeft') {
+      mainMoveTable.gotoPrevMove();
+    }
+  });
+
+  resetToFEN(FENUrlParam ? FENUrlParam : getFEN());
 });
