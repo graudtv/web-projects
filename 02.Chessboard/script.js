@@ -673,6 +673,16 @@ class SimpleMoveTableUI {
       this.focusTop(this.curMoveIndex);
   }
 
+  gotoFirstMove() {
+    this.setCurrentMove(0);
+    this.focusBottom(this.curMoveIndex);
+  }
+
+  gotoLastMove() {
+    this.setCurrentMove(this.moves.length - 1);
+    this.focusBottom(this.curMoveIndex);
+  }
+
   pushMove(mv) {
     this.moves = this.moves.slice(0, this.curMoveIndex + 1);
     this.moves.push(mv);
@@ -746,6 +756,10 @@ $(document).ready(() => {
       mainMoveTable.gotoNextMove();
     } else if (e.code === 'ArrowLeft') {
       mainMoveTable.gotoPrevMove();
+    } else if (e.code === 'ArrowUp') {
+      mainMoveTable.gotoFirstMove();
+    } else if (e.code === 'ArrowDown') {
+      mainMoveTable.gotoLastMove();
     }
   });
 
