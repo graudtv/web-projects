@@ -102,6 +102,11 @@ class ChessBoard {
     } else if (isPawnPromotion) {
       this.setPiece(dstRow, dstColumn, makePiece(promotionTarget || 'Q', getPieceColor(srcPiece)));
     } else if (isCastling) {
+      if (srcPiece === 'K')
+        this.castling.whiteQueenSide = this.castling.whiteKingSide = false;
+      else
+        this.castling.blackQueenSide = this.castling.blackKingSide = false;
+
       if (dstColumn > srcColumn) {
         /* Assume regular position of rooks */
         this.setPiece(dstRow, dstColumn - 1, this.getPiece(dstRow, 8));
@@ -111,6 +116,17 @@ class ChessBoard {
         this.setPiece(dstRow, 1, null);
       }
     }
+
+    /* take away castling rights if rook moves from original position */
+    if (srcPiece === 'R' && srcRow === 8 && srcColumn === 1)
+      this.castling.whiteQueenSide = false;
+    else if (srcPiece === 'R' && srcRow === 8 && srcColumn === 8)
+      this.castling.whiteKingSide = false;
+    else if (srcPiece === 'r' && srcRow === 1 && srcColumn === 1)
+      this.castling.blackQueenSide = false;
+    else if (srcPiece === 'r' && srcRow === 1 && srcColumn === 8)
+      this.castling.blackKingSide = false;
+
     if (isPawnMove || isCapture) {
       this.halfmoves++;
     }
@@ -153,7 +169,7 @@ class ChessBoard {
       const piece = getPiece(r, c);
       return piece ? (getPieceColor(piece) !== pieceColor) : true;
     }
-    const isValidTarget = ([r, c]) => (r > 0 && r <= 8 && r > 0 && c <= 8 && isEmptyOrEnemy(r, c));
+    const isValidTarget = ([r, c]) => (r > 0 && r <= 8 && c > 0 && c <= 8 && isEmptyOrEnemy(r, c));
 
     const isEmptyRow = (row, col_from, col_to) => {
       for (let c = col_from; c < col_to; ++c)
@@ -297,8 +313,8 @@ class ChessBoard {
   }
 
   getLegalMoveTargets(pieceCoordsStr) {
-    return [...this.getLegalMoves(stringToCoords(pieceCoordsStr))
-      .map(({dstRow, dstColumn}) => coordsToString(dstRow, dstColumn))];
+    return this.getLegalMoves(stringToCoords(pieceCoordsStr))
+      .map(({dstRow, dstColumn}) => coordsToString(dstRow, dstColumn));
   }
 
   getPiecesOfColor(color) {
@@ -321,26 +337,27 @@ class ChessBoard {
     });
   }
 
-  *getLegalMoves(pieceCoords) {
-    for (const mv of this.getPossibleMoves(pieceCoords)) {
+  getLegalMoves(pieceCoords) {
+    return this.getPossibleMoves(pieceCoords).filter(mv => {
       const boardCopy = new ChessBoard(this.FEN);
       boardCopy.makeMove(mv);
       const king = boardCopy.getPiecesOfColor(this.activeColor).find(({piece}) => piece.toUpperCase() === 'K');
       const kingCoords = coordsToString(king.row, king.column);
-      console.log("considering move", mv.srcPiece, coordsToString(mv.srcRow, mv.srcColumn), "->", coordsToString(mv.dstRow, mv.dstColumn));
-      console.log("active king", kingCoords);
       const attacks = boardCopy.getAllThreats().map(m => coordsToString(m.dstRow, m.dstColumn));
-      console.log("attacks", attacks);
-      if (!attacks.includes(kingCoords)) {
-        yield mv;
-      }
-    }
+      return !attacks.includes(kingCoords);
+    });
+  }
+
+  getAllLegalMoves() {
+    return this.getPiecesOfColor(this.activeColor).reduce((moveList, {row, column, piece}) => {
+      return moveList.concat(this.getLegalMoves([row, column]))
+    }, []);
   }
 
   resolveMove(moveNotation) {
     const move = moveNotation.replace('x', '').replace('+', '');
 
-    let moves = this.getAllPossibleMoves();
+    let moves = this.getAllLegalMoves();
     let srcPiece = undefined;
     let srcRow = undefined;
     let srcColumn = undefined;
@@ -626,7 +643,6 @@ class SimpleMoveTableUI {
   }
 
   setCurrentMove(moveIndex) {
-    const prevIndex = this.curMoveIndex;
     moveIndex = this.constrainMoveIndex(moveIndex);
     this.$tableElem.find('td').removeClass('active');
     this.$tableElem.find(`tr:nth-child(${Math.floor(moveIndex / 2) + 1}) td:nth-of-type(${moveIndex % 2 + 1})`).addClass('active');
