@@ -588,13 +588,17 @@ class SimpleMoveTableUI {
     this.render();
   }
 
+  #notifyListeners() {
+    for (const listener of this.moveEventListeners)
+      listener(this.curMoveIndex);
+  }
+
   render() {
     const handleClick = (moveIndex) => {
       const prevIndex = this.curMoveIndex;
       this.setCurrentMove(moveIndex);
       if (prevIndex !== this.curMoveIndex)
-        for (const listener of this.moveEventListeners)
-          listener(moveIndex);
+        this.#notifyListeners();
     };
 
     this.$tableElem.empty();
@@ -665,22 +669,26 @@ class SimpleMoveTableUI {
     this.setCurrentMove(this.curMoveIndex + 1);
     if (!this.isFullyVisible(this.curMoveIndex))
       this.focusBottom(this.curMoveIndex);
+    this.#notifyListeners();
   }
 
   gotoPrevMove() {
     this.setCurrentMove(this.curMoveIndex - 1);
     if (!this.isFullyVisible(this.curMoveIndex))
       this.focusTop(this.curMoveIndex);
+    this.#notifyListeners();
   }
 
   gotoFirstMove() {
     this.setCurrentMove(0);
     this.focusBottom(this.curMoveIndex);
+    this.#notifyListeners();
   }
 
   gotoLastMove() {
     this.setCurrentMove(this.moves.length - 1);
     this.focusBottom(this.curMoveIndex);
+    this.#notifyListeners();
   }
 
   pushMove(mv) {
@@ -689,6 +697,10 @@ class SimpleMoveTableUI {
     this.curMoveIndex += 1;
     this.render();
     this.focusBottom(this.curMoveIndex);
+  }
+
+  getCurrentFEN() {
+    return movesToFEN(this.moves.slice(0, this.curMoveIndex + 1));
   }
 
   /* Example: tableUI.addMoveEventListener((moveIndex) => { ... }) */
@@ -740,11 +752,11 @@ $(document).ready(() => {
     resetToFEN(getFEN());
   });
 
-  mainMoveTable.addMoveEventListener(idx => {
-    const FEN = movesToFEN(mainMoveTable.moves.slice(0, idx + 1));
+  mainMoveTable.addMoveEventListener(() => {
+    const FEN = mainMoveTable.getCurrentFEN();
     mainBoard.resetToFEN(FEN);
     $(FENInput).val(FEN);
-  })
+  });
 
   mainBoard.addMoveEventListener(mv => {
     mainMoveTable.pushMove(getMoveNotation(mv));
