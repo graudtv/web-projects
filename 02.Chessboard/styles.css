@@ -48,7 +48,7 @@ body {
 
 .horizontal-container {
   display: flex;
-  flex-grow: 1;
+  flex: 0 0 40vw;
   justify-content: center;
   gap: 0 50px;
   overflow: hidden;
@@ -208,12 +208,17 @@ html {
   background-color: green;
 }
 
-@media (max-aspect-ratio: 5/5) {
+@media (max-aspect-ratio: 4/5) {
 .fen-input-box {
   display: none;
 }
 
+.chessboard {
+  max-width: 70vh;
+  align-self: center;
+}
 .horizontal-container {
+  flex: auto;
   flex-direction: column;
   gap: 1%;
 }
