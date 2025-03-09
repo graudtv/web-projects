@@ -1,12 +1,7 @@
-const params = new URLSearchParams(document.location.search);
-const FENUrlParam = params.get('FEN');
-const FENInput = document.getElementById('fen-input');
-const FENCopyButton = document.getElementById('fen-copy');
+export const initialPositionFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+export const emptyBoardFEN = '8/8/8/8/8/8/8/8 w - - 0 1';
 
-const initialPositionFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const emptyBoardFEN = '8/8/8/8/8/8/8/8 w - - 0 1';
-
-class ChessBoard {
+export class ChessBoard {
   constructor(FEN) {
     this.FEN = FEN || emptyBoardFEN;
   }
@@ -439,37 +434,20 @@ class ChessBoard {
 
 }
 
-function getFEN() {
-  return FENInput.value || FENInput.placeholder;
-}
-
-function makePiece(letter, color) {
+export function makePiece(letter, color) {
   return (color === 'w') ? letter.toUpperCase() : letter.toLowerCase();
 }
 
-function getPieceColor(letter) {
+export function getPieceColor(letter) {
   return (letter.toUpperCase() === letter) ? "w" : "b";
 }
 
-/* 'k' -> 'black king', 'Q' -> 'white queen', ... */
-function getPieceClass(letter) {
-  const color = (letter.toUpperCase() === letter) ? "white " : "black ";
-  switch (letter.toLowerCase()) {
-    case 'k': return color + "king";
-    case 'q': return color + "queen";
-    case 'r': return color + "rook";
-    case 'b': return color + "bishop";
-    case 'n': return color + "knight";
-    case 'p': return color + "pawn";
-  }
-}
-
 /* row, column: 1, ..., 8 */
-function coordsToString(row, column) {
+export function coordsToString(row, column) {
   return 'abcdefgh'[column - 1] + (9 - row);
 }
 
-function stringToCoords(str) {
+export function stringToCoords(str) {
   if (str.length == 2) {
     const column = 'abcdefgh'.split('').indexOf(str[0]) + 1;
     const row = '87654321'.split('').indexOf(str[1]) + 1;
@@ -480,15 +458,15 @@ function stringToCoords(str) {
   return undefined;
 }
 
-function movesToFEN(moves) {
+export function movesToFEN(moves) {
   const board = new ChessBoard(initialPositionFEN);
-  for (mv of moves) {
+  for (const mv of moves) {
     board.makeMove(board.resolveMove(mv));
   }
   return board.FEN;
 }
 
-function getMoveNotation(mv) {
+export function getMoveNotation(mv) {
   const {srcRow, srcColumn, srcPiece, dstRow, dstColumn, promotionTarget} = mv;
   const piece = (srcPiece.toUpperCase() !== 'P') ? srcPiece.toUpperCase() : '';
   const srcCoords = coordsToString(srcRow, srcColumn);
@@ -496,300 +474,3 @@ function getMoveNotation(mv) {
   return piece + srcCoords + dstCoords;
 }
 
-class ChessBoardUI {
-  moveEventListeners = []
-
-  constructor(elementId) {
-    this.board = new ChessBoard();
-    this.$boardElem = $(`#${elementId}`)
-    this.selectedCell = null;
-  }
-
-  deselectSelectedCell() {
-    this.$boardElem.children('.possible-move').remove();
-    this.$boardElem.children('.selected').removeClass('selected');
-    this.selectedCell = null;
-  }
-
-  handleClick(row, column) {
-    const pos = coordsToString(row, column)
-
-    if (this.selectedCell && this.board.getLegalMoveTargets(this.selectedCell).includes(pos)) {
-      /* Legal move. Move piece and update UI */
-      const srcCoords = stringToCoords(this.selectedCell)
-      const mv = {
-        srcRow: srcCoords[0],
-        srcColumn: srcCoords[1],
-        srcPiece: this.board.getPiece(srcCoords[0], srcCoords[1]),
-        dstRow: row,
-        dstColumn: column,
-        promotionTarget: 'Q'
-      };
-      this.board.makeMove(mv);
-      this.selectedCell = null;
-      this.render();
-      for (const listener of this.moveEventListeners)
-        listener(mv);
-    } else {
-      this.deselectSelectedCell();
-      const selectedPiece = this.board.getPiece(row, column);
-      if (selectedPiece && this.board.activeColor === getPieceColor(selectedPiece)) {
-        /* Highlight selected square */
-        this.$boardElem.children(`.cell[value="${pos}"]`).addClass('selected');
-        this.selectedCell = pos;
-
-        /* Show possible moves */
-        for (const {dstRow, dstColumn} of this.board.getLegalMoves([row, column])) {
-          this.$boardElem.append(
-            $('<div class="possible-move"></div>').css({'grid-row': dstRow, 'grid-column': dstColumn})
-          );
-        }
-      }
-    }
-  }
-
-  render() {
-    const createPiece = (piece, row, column) => {
-      if (piece !== null) {
-        this.$boardElem.append(
-          $('<div></div>').addClass(getPieceClass(piece))
-                          .val(coordsToString(row, column))
-                          .css({ 'grid-row': row, 'grid-column': column})
-                          .click(() => { this.handleClick(row, column); })
-        );
-      }
-    }
-    const createCell = (row, column) => {
-      const color = ((row + column) % 2 == 0) ? "white" : "black";
-      this.$boardElem.append(
-        $('<div></div>').addClass(color).addClass('cell')
-                        .val(coordsToString(row, column))
-                        .css({ 'grid-row': row, 'grid-column': column})
-                        .click(() => { this.handleClick(row, column); })
-      );
-    }
-
-    this.$boardElem.empty();
-    for (let i = 0; i < 8; ++i) {
-      for (let j = 0; j < 8; ++j) {
-        createCell(i + 1, j + 1);
-        createPiece(this.board.pieces[i][j], i + 1, j + 1);
-      }
-    }
-  }
-
-  resetToFEN(FEN) {
-    this.board.FEN = FEN;
-    this.selectedCell = null;
-    this.render();
-  }
-
-  /* Example: boardUI.addMoveEventListener((mv) => { ... }) */
-  addMoveEventListener(listener) {
-    this.moveEventListeners.push(listener);
-  }
-}
-
-class SimpleMoveTableUI {
-  moves = []
-  curMoveIndex = 0;
-  moveEventListeners = [];
-
-  constructor(elementId) {
-    this.$tableElem = $(`#${elementId}`);
-  }
-
-  reset(moveList=[]) {
-    this.moves = moveList;
-    this.curMoveIndex = 0;
-    this.render();
-  }
-
-  #notifyListeners() {
-    for (const listener of this.moveEventListeners)
-      listener(this.curMoveIndex);
-  }
-
-  render() {
-    const handleClick = (moveIndex) => {
-      const prevIndex = this.curMoveIndex;
-      this.setCurrentMove(moveIndex);
-      if (prevIndex !== this.curMoveIndex)
-        this.#notifyListeners();
-    };
-
-    this.$tableElem.empty();
-    for (let i = 0; i < this.moves.length; i += 2) {
-      const tr = $('<tr></tr>');
-      tr.append(`<th>${i / 2 + 1}</th>`);
-      tr.append($(`<td>${this.moves[i]}</td>`).click(() => {handleClick(i)}));
-      if (this.moves[i + 1])
-        tr.append($(`<td>${this.moves[i + 1]}</td>`).click(() => {handleClick(i + 1)}));
-      this.$tableElem.append(tr);
-    }
-    this.setCurrentMove(this.curMoveIndex);
-  }
-
-  constrainMoveIndex(moveIndex) {
-    if (moveIndex < 0 || this.moves.length === 0)
-      return 0;
-    if (moveIndex >= this.moves.length)
-      return this.moves.length - 1;
-    return moveIndex;
-  }
-
-  getCurrentMoveIndex() {
-    return this.curMoveIndex;
-  }
-
-  setCurrentMove(moveIndex) {
-    moveIndex = this.constrainMoveIndex(moveIndex);
-    this.$tableElem.find('td').removeClass('active');
-    this.$tableElem.find(`tr:nth-child(${Math.floor(moveIndex / 2) + 1}) td:nth-of-type(${moveIndex % 2 + 1})`).addClass('active');
-    this.curMoveIndex = moveIndex;
-  }
-
-  focusTop(moveIndex) {
-    if (this.moves.length === 0)
-      return;
-    moveIndex = this.constrainMoveIndex(moveIndex);
-    const $wrapper = this.$tableElem.parent();
-    const $td = this.$tableElem.find('td').eq(moveIndex);
-    const tdTop = $td.position().top;
-    $wrapper.get(0).scrollTo(0, tdTop);
-  }
-
-  focusBottom(moveIndex) {
-    if (this.moves.length === 0)
-      return;
-    moveIndex = this.constrainMoveIndex(moveIndex);
-    const $wrapper = this.$tableElem.parent();
-    const $td = this.$tableElem.find('td').eq(moveIndex);
-    const tdBottom = $td.position().top + $td.height();
-    $wrapper.get(0).scrollTo(0, tdBottom - $wrapper.height());
-  }
-
-  isFullyVisible(moveIndex) {
-    if (this.moves.length === 0)
-      return true;
-    moveIndex = this.constrainMoveIndex(moveIndex);
-    const $wrapper = this.$tableElem.parent();
-    const wrapper = $wrapper.get(0);
-    const $td = this.$tableElem.find('td').eq(moveIndex);
-    const tdTop = $td.position().top;
-    const tdBottom = $td.position().top + $td.height();
-    return tdTop >= wrapper.scrollTop && tdBottom <= wrapper.scrollTop + $wrapper.height();
-  }
-
-  gotoNextMove() {
-    this.setCurrentMove(this.curMoveIndex + 1);
-    if (!this.isFullyVisible(this.curMoveIndex))
-      this.focusBottom(this.curMoveIndex);
-    this.#notifyListeners();
-  }
-
-  gotoPrevMove() {
-    this.setCurrentMove(this.curMoveIndex - 1);
-    if (!this.isFullyVisible(this.curMoveIndex))
-      this.focusTop(this.curMoveIndex);
-    this.#notifyListeners();
-  }
-
-  gotoFirstMove() {
-    this.setCurrentMove(0);
-    this.focusBottom(this.curMoveIndex);
-    this.#notifyListeners();
-  }
-
-  gotoLastMove() {
-    this.setCurrentMove(this.moves.length - 1);
-    this.focusBottom(this.curMoveIndex);
-    this.#notifyListeners();
-  }
-
-  pushMove(mv) {
-    this.moves = this.moves.slice(0, this.curMoveIndex + 1);
-    this.moves.push(mv);
-    this.curMoveIndex += 1;
-    this.render();
-    this.focusBottom(this.curMoveIndex);
-  }
-
-  getCurrentFEN() {
-    return movesToFEN(this.moves.slice(0, this.curMoveIndex + 1));
-  }
-
-  /* Example: tableUI.addMoveEventListener((moveIndex) => { ... }) */
-  addMoveEventListener(listener) {
-    this.moveEventListeners.push(listener);
-  }
-}
-
-$(document).ready(() => {
-  const mainBoard = new ChessBoardUI('main-board');
-  const mainMoveTable = new SimpleMoveTableUI('main-pgn-table');
-
-  const resetToFEN = (FEN) => {
-    $(FENInput).val(FEN);
-    mainBoard.resetToFEN(FEN);
-    mainMoveTable.reset();
-  };
-
-  const resetToPGN = (moveList) => {
-    const FEN = movesToFEN(moveList);
-    $(FENInput).val(FEN);
-    mainBoard.resetToFEN(FEN);
-    mainMoveTable.reset(moveList);
-    mainMoveTable.setCurrentMove(moveList.length - 1);
-    mainMoveTable.focusBottom(moveList.length - 1);
-  }
-
-  $('#btn-starting-position').click(() => {
-    resetToFEN(initialPositionFEN);
-  });
-
-  $('#btn-clear-board').click(() => {
-    resetToFEN(emptyBoardFEN);
-  });
-
-  $('#btn-random-puzzle').click(() => {
-    //const puzzleId = "Pvv9d";
-    const puzzleId = "next";
-    $.getJSON(`https://lichess.org/api/puzzle/${puzzleId}`, data => {
-      console.log("puzzle data", data);
-      const moves = data.game.pgn.split(" ");
-      resetToPGN(moves);
-    });
-  });
-  $('#fen-copy').click(() => {
-    navigator.clipboard.writeText(getFEN());
-  });
-  $('#fen-input').on('input', () => {
-    resetToFEN(getFEN());
-  });
-
-  mainMoveTable.addMoveEventListener(() => {
-    const FEN = mainMoveTable.getCurrentFEN();
-    mainBoard.resetToFEN(FEN);
-    $(FENInput).val(FEN);
-  });
-
-  mainBoard.addMoveEventListener(mv => {
-    mainMoveTable.pushMove(getMoveNotation(mv));
-    $(FENInput).val(mainBoard.board.FEN);
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'ArrowRight') {
-      mainMoveTable.gotoNextMove();
-    } else if (e.code === 'ArrowLeft') {
-      mainMoveTable.gotoPrevMove();
-    } else if (e.code === 'ArrowUp') {
-      mainMoveTable.gotoFirstMove();
-    } else if (e.code === 'ArrowDown') {
-      mainMoveTable.gotoLastMove();
-    }
-  });
-
-  resetToFEN(FENUrlParam ? FENUrlParam : getFEN());
-});
