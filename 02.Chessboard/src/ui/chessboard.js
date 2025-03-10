@@ -1,15 +1,14 @@
 import {
-  ChessBoard,
-  coordsToString,
-  stringToCoords,
-  getPieceColor,
-} from '../chess/core.js'
+  Chess,
+  WHITE, BLACK,
+  PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
+} from 'chess.js'
 
 export class ChessBoardUI {
   moveEventListeners = []
 
   constructor(elementId) {
-    this.board = new ChessBoard();
+    this.board = new Chess();
     this.$boardElem = $(`#${elementId}`)
     this.selectedCell = null;
   }
@@ -23,43 +22,40 @@ export class ChessBoardUI {
   handleClick(row, column) {
     const pos = coordsToString(row, column)
 
-    if (this.selectedCell && this.board.getLegalMoveTargets(this.selectedCell).includes(pos)) {
-      /* Legal move. Move piece and update UI */
-      const srcCoords = stringToCoords(this.selectedCell)
-      const mv = {
-        srcRow: srcCoords[0],
-        srcColumn: srcCoords[1],
-        srcPiece: this.board.getPiece(srcCoords[0], srcCoords[1]),
-        dstRow: row,
-        dstColumn: column,
-        promotionTarget: 'Q'
-      };
-      this.board.makeMove(mv);
-      this.selectedCell = null;
-      this.render();
-      for (const listener of this.moveEventListeners)
-        listener(mv);
-    } else {
-      this.deselectSelectedCell();
-      const selectedPiece = this.board.getPiece(row, column);
-      if (selectedPiece && this.board.activeColor === getPieceColor(selectedPiece)) {
-        /* Highlight selected square */
-        this.$boardElem.children(`.cell[value="${pos}"]`).addClass('selected');
-        this.selectedCell = pos;
+    if (this.selectedCell) {
+      const mv = this.board.moves({square: this.selectedCell, verbose: true}).find(mv => mv.to === pos);
+      console.log("possible moves", this.board.moves({square: this.selectedCell, verbose: true}));
+      console.log("match?", mv);
+      if (mv) {
+        /* Legal move. Move piece and update UI */
+        this.board.move(mv);
+        this.selectedCell = null;
+        this.render();
+        for (const listener of this.moveEventListeners)
+          listener(mv);
+        return;
+      }
+    }
+    this.deselectSelectedCell();
+    const selectedPiece = this.board.get(pos);
+    if (selectedPiece && selectedPiece.color === this.board.turn()) {
+      /* Highlight selected square */
+      this.$boardElem.children(`.cell[value="${pos}"]`).addClass('selected');
+      this.selectedCell = pos;
 
-        /* Show possible moves */
-        for (const {dstRow, dstColumn} of this.board.getLegalMoves([row, column])) {
-          this.$boardElem.append(
-            $('<div class="possible-move"></div>').css({'grid-row': dstRow, 'grid-column': dstColumn})
-          );
-        }
+      /* Show possible moves */
+      const possibleMoves = this.board.moves({square: pos, verbose: true});
+      for (const [dstRow, dstColumn] of possibleMoves.map(mv => stringToCoords(mv.to))) {
+        this.$boardElem.append(
+          $('<div class="possible-move"></div>').css({'grid-row': dstRow, 'grid-column': dstColumn})
+        );
       }
     }
   }
 
   render() {
     const createPiece = (piece, row, column) => {
-      if (piece !== null) {
+      if (piece) {
         this.$boardElem.append(
           $('<div></div>').addClass(getPieceClass(piece))
                           .val(coordsToString(row, column))
@@ -79,16 +75,16 @@ export class ChessBoardUI {
     }
 
     this.$boardElem.empty();
-    for (let i = 0; i < 8; ++i) {
-      for (let j = 0; j < 8; ++j) {
-        createCell(i + 1, j + 1);
-        createPiece(this.board.pieces[i][j], i + 1, j + 1);
+    for (let row = 1; row <= 8; ++row) {
+      for (let column = 1; column <= 8; ++column) {
+        createCell(row, column);
+        createPiece(this.board.get(coordsToString(row, column)), row, column);
       }
     }
   }
 
   resetToFEN(FEN) {
-    this.board.FEN = FEN;
+    this.board.load(FEN, {skipValidation: true});
     this.selectedCell = null;
     this.render();
   }
@@ -99,16 +95,32 @@ export class ChessBoardUI {
   }
 }
 
-/* 'k' -> 'black king', 'Q' -> 'white queen', ... */
-function getPieceClass(letter) {
-  const color = (letter.toUpperCase() === letter) ? "white " : "black ";
-  switch (letter.toLowerCase()) {
-    case 'k': return color + "king";
-    case 'q': return color + "queen";
-    case 'r': return color + "rook";
-    case 'b': return color + "bishop";
-    case 'n': return color + "knight";
-    case 'p': return color + "pawn";
+/* row, column: 1, ..., 8 */
+function coordsToString(row, column) {
+  return 'abcdefgh'[column - 1] + (9 - row);
+}
+
+function stringToCoords(str) {
+  if (str.length == 2) {
+    const column = 'abcdefgh'.split('').indexOf(str[0]) + 1;
+    const row = '87654321'.split('').indexOf(str[1]) + 1;
+    if (row > 0 && column > 0) {
+      return [ row, column ];
+    }
+  }
+  return undefined;
+}
+
+/* { type = KING, color: BLACK } -> 'black king' */
+function getPieceClass(piece) {
+  const color = (piece.color == WHITE) ? "white " : "black ";
+  switch (piece.type) {
+    case KING: return color + "king";
+    case QUEEN: return color + "queen";
+    case ROOK: return color + "rook";
+    case BISHOP: return color + "bishop";
+    case KNIGHT: return color + "knight";
+    case PAWN: return color + "pawn";
   }
 }
 

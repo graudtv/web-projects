@@ -3,14 +3,11 @@ const FENUrlParam = params.get('FEN');
 const FENInput = document.getElementById('fen-input');
 const FENCopyButton = document.getElementById('fen-copy');
 
-import {
-  getMoveNotation,
-  movesToFEN,
-  emptyBoardFEN,
-  initialPositionFEN
-} from './chess/core.js'
 import { ChessBoardUI } from './ui/chessboard.js';
 import { SimpleMoveTableUI } from './ui/simplemovetable.js';
+
+import { Chess } from 'chess.js';
+import { movesToFEN, emptyBoardFEN, initialPositionFEN } from './chess/utils.js'
 
 function getFEN() {
   return FENInput.value || FENInput.placeholder;
@@ -66,7 +63,7 @@ $(document).ready(() => {
   });
 
   mainBoard.addMoveEventListener(mv => {
-    mainMoveTable.pushMove(getMoveNotation(mv));
+    mainMoveTable.pushMove(mv.san);
     $(FENInput).val(mainBoard.board.FEN);
   });
 

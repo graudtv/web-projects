@@ -1,4 +1,4 @@
-import { movesToFEN } from '../chess/core.js'
+import { movesToFEN } from '../chess/utils.js'
 
 export class SimpleMoveTableUI {
   moves = []
