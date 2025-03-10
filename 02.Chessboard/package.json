@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "build": "esbuild --bundle src/main.js --outdir=dist --minify --sourcemap",
+    "website": "esbuild --bundle src/main.js --outdir=dist --minify --sourcemap --serve --servedir=.",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.1"
+  }
+}
