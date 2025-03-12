@@ -58,7 +58,8 @@ $(document).ready(() => {
     }, 500);
 
     //const puzzleId = "Pvv9d";
-    const puzzleId = "next";
+    //const puzzleId = "next";
+    const puzzleId = "next?angle=mate";
     $.getJSON(`https://lichess.org/api/puzzle/${puzzleId}`, data => {
       isLoaded = true;
       $(this).text(initialText);
