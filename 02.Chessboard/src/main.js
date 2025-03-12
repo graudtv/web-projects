@@ -48,10 +48,20 @@ $(document).ready(() => {
     resetToFEN(emptyBoardFEN);
   });
 
-  $('#btn-random-puzzle').click(() => {
+  $('#btn-random-puzzle').click(function() {
+    const initialText = $(this).text();
+    let isLoaded = false;
+
+    setTimeout(() => {
+      if (!isLoaded)
+        $(this).text("Loading...");
+    }, 500);
+
     //const puzzleId = "Pvv9d";
     const puzzleId = "next";
     $.getJSON(`https://lichess.org/api/puzzle/${puzzleId}`, data => {
+      isLoaded = true;
+      $(this).text(initialText);
       console.log("puzzle data", data);
       const moves = data.game.pgn.split(" ");
       resetToPGN(moves);
