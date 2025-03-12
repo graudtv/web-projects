@@ -3,11 +3,19 @@ const FENUrlParam = params.get('FEN');
 const FENInput = document.getElementById('fen-input');
 const FENCopyButton = document.getElementById('fen-copy');
 
-import { ChessBoardUI } from './ui/chessboard.js';
-import { SimpleMoveTableUI } from './ui/simplemovetable.js';
+import '../assets/styles.css'
+import '../assets/chessground.css'
+import '../assets/pieces/alpha.css'
+import '../assets/pieces/cburnett.css'
+import '../assets/pieces/horsey.css'
+import '../assets/pieces/merida.css'
+import '../assets/board/blue.css'
+import '../assets/board/classic.css'
 
 import { Chess } from 'chess.js';
 import { movesToFEN, emptyBoardFEN, initialPositionFEN } from './chess/utils.js'
+import { ChessBoardUI } from './ui/chessboard.js';
+import { SimpleMoveTableUI } from './ui/simplemovetable.js';
 
 function getFEN() {
   return FENInput.value || FENInput.placeholder;
@@ -76,8 +84,9 @@ $(document).ready(() => {
       mainMoveTable.gotoFirstMove();
     } else if (e.code === 'ArrowDown') {
       mainMoveTable.gotoLastMove();
+    } else if (e.code === 'KeyF') {
+      mainBoard.toggleOrientation();
     }
   });
-
   resetToFEN(FENUrlParam ? FENUrlParam : getFEN());
 });
