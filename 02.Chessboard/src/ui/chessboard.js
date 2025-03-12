@@ -25,8 +25,9 @@ export class ChessBoardUI {
 
   resetToFEN(FEN, orientation="auto") {
     const handleMove = (orig, dest) => {
-      const mv = this.board.move({from: orig, to: dest});
+      const mv = this.board.move({from: orig, to: dest, promotion: 'q'});
       this.cg.set({
+        fen: this.board.fen(),
         turnColor: getColor(this.board),
         check: this.board.inCheck(),
         movable: {
