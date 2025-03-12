@@ -28,6 +28,7 @@ export class ChessBoardUI {
       const mv = this.board.move({from: orig, to: dest});
       this.cg.set({
         turnColor: getColor(this.board),
+        check: this.board.inCheck(),
         movable: {
           color: getColor(this.board),
           dests: getPossibleMoves(this.board)
