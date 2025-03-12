@@ -23,7 +23,7 @@ export class ChessBoardUI {
     this.cg.toggleOrientation();
   }
 
-  resetToFEN(FEN) {
+  resetToFEN(FEN, orientation="auto") {
     const handleMove = (orig, dest) => {
       const mv = this.board.move({from: orig, to: dest});
       this.cg.set({
@@ -41,8 +41,13 @@ export class ChessBoardUI {
     this.board.load(FEN, {skipValidation: true});
     this.cg.cancelMove();
     this.cg.cancelPremove();
+
+    if (orientation === "auto")
+      orientation = getColor(this.board);
+
     this.cg.set({
       fen: FEN,
+      orientation: orientation,
       lastMove: undefined,
       check: this.board.inCheck(),
       turnColor: getColor(this.board),
