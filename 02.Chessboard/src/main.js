@@ -22,20 +22,36 @@ function getFEN() {
   return FENInput.value || FENInput.placeholder;
 }
 
+function showAlert(alertHTML, kind="success") {
+  $('#alert-box').append(`
+    <div class="alert alert-${kind} text-center fw-bold mb-0" role="alert">
+      ${alertHTML}
+    </div>
+  `);
+}
+
+function clearAlerts() {
+  $('#alert-box').empty();
+}
+
 $(document).ready(() => {
   const mainBoard = new ChessBoardUI('main-board');
   const mainMoveTable = new SimpleMoveTableUI('main-pgn-table');
 
   const resetToFEN = (FEN) => {
+    clearAlerts();
     $(FENInput).val(FEN);
     mainBoard.resetToFEN(FEN);
     mainMoveTable.reset();
   };
 
   const resetToPGN = (moveList) => {
+    clearAlerts();
     const FEN = movesToFEN(moveList);
     $(FENInput).val(FEN);
     mainBoard.resetToFEN(FEN, "auto");
+    const activeColor = mainBoard.board.turn() === 'w' ? 'White' : 'Black';
+    showAlert(`${activeColor} to move and win!`, 'info');
     mainMoveTable.reset(moveList);
     mainMoveTable.setCurrentMove(moveList.length - 1);
     mainMoveTable.focusBottom(moveList.length - 1);
@@ -50,6 +66,7 @@ $(document).ready(() => {
   });
 
   $('#btn-random-puzzle').click(function() {
+    clearAlerts();
     const initialText = $(this).text();
     let isLoaded = false;
 
@@ -58,6 +75,7 @@ $(document).ready(() => {
         $(this).text("Loading...");
     }, 500);
 
+    //const puzzleId = "Gy5j7";
     //const puzzleId = "Pvv9d";
     //const puzzleId = "next";
     const puzzleId = "next?angle=mate";
@@ -80,11 +98,15 @@ $(document).ready(() => {
     const FEN = mainMoveTable.getCurrentFEN();
     mainBoard.resetToFEN(FEN);
     $(FENInput).val(FEN);
+    clearAlerts();
   });
 
   mainBoard.addMoveEventListener(mv => {
     mainMoveTable.pushMove(mv.san);
     $(FENInput).val(mainBoard.board.FEN);
+    clearAlerts();
+    if (mainBoard.board.isCheckmate())
+      showAlert("Checkmate!", "success");
   });
 
   document.addEventListener('keydown', (e) => {

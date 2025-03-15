@@ -5,19 +5,19 @@
   --fen-copy-icon-hover: rgb(217, 219, 206);
   --fen-copy-icon-active: rgb(186, 186, 182);
 
+  --info-bar: #dee2e6;
   --pgn-table-border: var(--border);
   --pgn-table-th: #9db5cc;
-  --pgn-table-td: #dee2e6;
   --pgn-table-td-active: #c6def5;
   --pgn-table-td-active: #b3d4f5;
   --pgn-table-td-hover: #91c3f2;
 }
 
-.pgn-table-wrapper {
-  scrollbar-color: grey var(--pgn-table-td);
+.info-wrapper {
+  scrollbar-color: grey var(--info-bar);
   height: 100%;
   overflow: auto;
-  background-color: var(--pgn-table-td);
+  background-color: var(--info-bar);
 }
 
 .pgn-table {

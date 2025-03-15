@@ -8,7 +8,7 @@ export class ChessBoardUI {
     this.board = new Chess();
     this.cg = Chessground(document.getElementById(elementId), {
       draggable: {
-        enabled: false
+        enabled: true
       },
       animation: {
         enabled: false
