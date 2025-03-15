@@ -3,7 +3,8 @@ const FENUrlParam = params.get('FEN');
 const FENInput = document.getElementById('fen-input');
 const FENCopyButton = document.getElementById('fen-copy');
 
-import '../assets/styles.css'
+import '../assets/layout.css'
+import '../assets/components.css'
 import '../assets/chessground.css'
 import '../assets/pieces/alpha.css'
 import '../assets/pieces/cburnett.css'

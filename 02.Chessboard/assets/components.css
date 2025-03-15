@@ -1,0 +1,96 @@
+:root {
+  --border: rgb(112, 89, 50);
+  --fen-border: var(--border);
+  --fen-background: rgb(234, 235, 230);
+  --fen-copy-icon-hover: rgb(217, 219, 206);
+  --fen-copy-icon-active: rgb(186, 186, 182);
+
+  --pgn-table-border: var(--border);
+  --pgn-table-th: #9db5cc;
+  --pgn-table-td: #dee2e6;
+  --pgn-table-td-active: #c6def5;
+  --pgn-table-td-active: #b3d4f5;
+  --pgn-table-td-hover: #91c3f2;
+}
+
+.pgn-table-wrapper {
+  scrollbar-color: grey var(--pgn-table-td);
+  height: 100%;
+  overflow: auto;
+  background-color: var(--pgn-table-td);
+}
+
+.pgn-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.pgn-table th, .pgn-table td {
+  height: 2em;
+}
+.pgn-table th {
+  width: 20%;
+  text-align: center;
+  font-style: italic;
+  background-color: var(--pgn-table-th);
+}
+.pgn-table td {
+  padding: 0 1em;
+  width: 40%;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .pgn-table td:hover {
+    background-color: var(--pgn-table-td-hover);
+  }
+}
+
+.pgn-table td.active {
+  background-color: var(--pgn-table-td-active);
+  font-weight: bold;
+}
+
+.fen-input-box {
+  display: inline-flex;
+  border: 1px solid var(--fen-border);
+  border-radius: 5px;
+  overflow: hidden;
+  align-items: center;
+  background-color: var(--fen-background);
+  height: 2.5em;
+}
+
+.fen-input-box > span {
+  display: flex;
+  align-items: center;
+  padding: 0 1em;
+  height: 100%;
+}
+
+.fen-input-box > input {
+  padding: 0 5px;
+  border: none;
+  border-radius: 5px;
+  height: 90%;
+  width: 100%;
+}
+
+.fen-input-box > i {
+  display: flex;
+  align-items: center;
+  padding: 0 0.6em;
+  height: 100%;
+  border-radius: 5px;
+}
+
+
+@media (hover: hover) {
+  .fen-input-box > i:hover {
+    background-color: var(--fen-copy-icon-hover);
+  }
+}
+
+.fen-input-box > i:active {
+  background-color: var(--fen-copy-icon-active);
+}

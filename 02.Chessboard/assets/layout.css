@@ -1,0 +1,75 @@
+/* Styling and layout of the main page */
+
+html {
+  font-family: "Lato", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.main-container .board-container {
+  width: 100%;
+  aspect-ratio: 1;
+}
+.main-container .info-container {
+  flex: auto;
+  overflow: hidden;
+}
+.main-container .controls-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+}
+
+/* square screen */
+@media (min-aspect-ratio: 4/5) and (max-aspect-ratio: 7/5) {
+  .main-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: space-evenly;
+  }
+  .main-container .board-container {
+    width: auto;
+    height: 65%;
+  }
+  .main-container .info-container {
+    height: 70%;
+    order: -1;
+  }
+  .main-container .controls-container {
+    width: 100%;
+  }
+}
+
+/* desktop or mobile landscape orientation */
+@media (min-aspect-ratio: 7/5) {
+  .main-container {
+    flex-direction: row;
+    gap: 1%;
+  }
+  .main-container .board-container {
+    width: auto;
+    height: 100%;
+  }
+  .main-container .info-container {
+    order: -1;
+    flex-basis: 0;
+  }
+  .main-container .controls-container {
+    flex-direction: column;
+    justify-content: center;
+    flex: auto;
+    gap: 1em;
+    flex-basis: 0;
+  }
+}
