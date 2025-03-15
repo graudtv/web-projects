@@ -35,7 +35,7 @@ $(document).ready(() => {
   const resetToPGN = (moveList) => {
     const FEN = movesToFEN(moveList);
     $(FENInput).val(FEN);
-    mainBoard.resetToFEN(FEN);
+    mainBoard.resetToFEN(FEN, "auto");
     mainMoveTable.reset(moveList);
     mainMoveTable.setCurrentMove(moveList.length - 1);
     mainMoveTable.focusBottom(moveList.length - 1);

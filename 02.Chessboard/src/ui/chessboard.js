@@ -23,7 +23,12 @@ export class ChessBoardUI {
     this.cg.toggleOrientation();
   }
 
-  resetToFEN(FEN, orientation="auto") {
+  /* orientation:
+   * - "keep" - keep previous board orientation
+   * - "auto" - set orientation based on which side is to move according to FEN
+   * - "black" / "white" - explictly set orientation
+   */
+  resetToFEN(FEN, orientation="keep") {
     const handleMove = (orig, dest) => {
       const mv = this.board.move({from: orig, to: dest, promotion: 'q'});
       this.cg.set({
@@ -43,8 +48,13 @@ export class ChessBoardUI {
     this.cg.cancelMove();
     this.cg.cancelPremove();
 
-    if (orientation === "auto")
+    if (orientation === "keep") {
+      orientation = this.cg.state.orientation;
+    } else if (orientation === "auto") {
       orientation = getColor(this.board);
+    } else if (!["white", "black"].includes(orientation)) {
+      throw new Error("invalid orientation specified");
+    }
 
     this.cg.set({
       fen: FEN,
