@@ -33,6 +33,13 @@ html, body {
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
+  gap: 2%;
+}
+
+@media (max-aspect-ratio: 4/5) {
+  .main-container .controls-container > * {
+    flex: auto;
+  }
 }
 
 /* square screen */
@@ -55,7 +62,7 @@ html, body {
   }
 }
 
-/* desktop or mobile landscape orientation */
+/* desktop or landscape orientation on mobile */
 @media (min-aspect-ratio: 7/5) {
   .main-container {
     flex-direction: row;
