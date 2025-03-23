@@ -72,7 +72,7 @@ $(document).ready(() => {
 
     setTimeout(() => {
       if (!isLoaded)
-        $(this).text("Loading...");
+        $(this).html('<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Loading...');
     }, 500);
 
     //const puzzleId = "Gy5j7";
