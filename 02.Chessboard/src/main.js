@@ -6,17 +6,14 @@ const FENCopyButton = document.getElementById('fen-copy');
 import '../assets/layout.css'
 import '../assets/components.css'
 import '../assets/chessground.css'
-import '../assets/pieces/alpha.css'
-import '../assets/pieces/cburnett.css'
-import '../assets/pieces/horsey.css'
-import '../assets/pieces/merida.css'
-import '../assets/board/blue.css'
-import '../assets/board/classic.css'
+import './ui/navbar.js'
 
 import { Chess } from 'chess.js';
 import { movesToFEN, emptyBoardFEN, initialPositionFEN } from './chess/utils.js'
 import { ChessBoardUI } from './ui/chessboard.js';
 import { SimpleMoveTableUI } from './ui/simplemovetable.js';
+import { userSettings } from './app/userSettings.js';
+import { boardThemes } from './ui/themes.js';
 
 function getFEN() {
   return FENInput.value || FENInput.placeholder;

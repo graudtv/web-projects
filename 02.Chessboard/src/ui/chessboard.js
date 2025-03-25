@@ -1,5 +1,7 @@
 import { Chess, SQUARES } from 'chess.js';
 import { Chessground } from 'chessground';
+import { userSettings } from '../app/userSettings.js'
+import { boardThemes } from './themes.js'
 
 export class ChessBoardUI {
   moveEventListeners = []
@@ -7,9 +9,8 @@ export class ChessBoardUI {
   constructor(elementId) {
     this.board = new Chess();
     this.cg = Chessground(document.getElementById(elementId), {
-      draggable: {
-        enabled: true
-      },
+      draggable: { enabled: isPieceDraggingEnabled() },
+      selectable: { enabled: isPieceSelectionEnabled() },
       animation: {
         enabled: false
       },
@@ -17,6 +18,18 @@ export class ChessBoardUI {
         enabled: false
       }
     });
+    userSettings.onchange('movement', (value) => {
+      this.cg.set({
+        draggable: { enabled: isPieceDraggingEnabled() },
+        selectable: { enabled: isPieceSelectionEnabled() }
+      });
+    });
+    const updateBoardStyle = (boardStyle) => {
+      const image = boardThemes.find(({name}) => name === boardStyle).image;
+      $(`#${elementId}`).find('cg-board').css('background-image', `url('${image}')`);
+    }
+    userSettings.onchange('boardStyle', updateBoardStyle);
+    updateBoardStyle(userSettings.get('boardStyle'));
   }
 
   toggleOrientation() {
@@ -91,4 +104,12 @@ function getPossibleMoves(board) {
       moves.set(s, ms.map((m) => m.to));
   });
   return moves;
+}
+
+function isPieceDraggingEnabled() {
+  return ['drag', 'both'].includes(userSettings.get('movement'));
+}
+
+function isPieceSelectionEnabled() {
+  return ['click', 'both'].includes(userSettings.get('movement'));
 }
