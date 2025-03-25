@@ -25,8 +25,8 @@ export class ChessBoardUI {
       });
     });
     const updateBoardStyle = (boardStyle) => {
-      const image = boardThemes.find(({name}) => name === boardStyle).image;
-      $(`#${elementId}`).find('cg-board').css('background-image', `url('${image}')`);
+      const allStyles = boardThemes.map(({name}) => name);
+      $(`#${elementId}`).removeClass(allStyles).addClass(boardStyle);
     }
     userSettings.onchange('boardStyle', updateBoardStyle);
     updateBoardStyle(userSettings.get('boardStyle'));
