@@ -6,12 +6,12 @@ const FENCopyButton = document.getElementById('fen-copy');
 import '../assets/layout.css'
 import '../assets/components.css'
 import '../assets/chessground.css'
-import './ui/navbar.js'
+import './ui/NavBar.js'
 
 import { Chess } from 'chess.js';
 import { movesToFEN, emptyBoardFEN, initialPositionFEN } from './chess/utils.js'
-import { ChessBoardUI } from './ui/chessboard.js';
-import { SimpleMoveTableUI } from './ui/simplemovetable.js';
+import { ChessboardUI } from './ui/ChessboardUI.js';
+import { SimpleMoveTableUI } from './ui/SimpleMoveTableUI.js';
 import { userSettings } from './app/userSettings.js';
 import { boardThemes } from './ui/themes.js';
 
@@ -32,7 +32,7 @@ function clearAlerts() {
 }
 
 $(document).ready(() => {
-  const mainBoard = new ChessBoardUI('main-board');
+  const mainBoard = new ChessboardUI('main-board');
   const mainMoveTable = new SimpleMoveTableUI('main-pgn-table');
 
   const resetToFEN = (FEN) => {

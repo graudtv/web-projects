@@ -3,7 +3,7 @@ import { Chessground } from 'chessground';
 import { userSettings } from '../app/userSettings.js'
 import { boardThemes, pieceThemes } from './themes.js'
 
-export class ChessBoardUI {
+export class ChessboardUI {
   moveEventListeners = []
 
   constructor(elementId) {
