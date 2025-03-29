@@ -9,31 +9,36 @@ export class ChessBoardUI {
   constructor(elementId) {
     this.board = new Chess();
     this.cg = Chessground(document.getElementById(elementId), {
-      draggable: { enabled: isPieceDraggingEnabled() },
-      selectable: { enabled: isPieceSelectionEnabled() },
-      animation: {
-        enabled: false
-      },
       premovable: {
         enabled: false
       }
     });
-    userSettings.onchange('movement', (value) => {
+
+    const listen = (setting, callback) => {
+      callback(userSettings.get(setting)); /* initial chessground setup */
+      userSettings.onchange(setting, callback);
+    };
+
+    listen('movement', (value) => {
       this.cg.set({
-        draggable: { enabled: isPieceDraggingEnabled() },
-        selectable: { enabled: isPieceSelectionEnabled() }
+        draggable: { enabled: ['drag', 'both'].includes(userSettings.get('movement')) },
+        selectable: { enabled: ['click', 'both'].includes(userSettings.get('movement')) }
       });
     });
-    const updateBoardStyle = (style) => {
+    listen('boardTheme', (style) => {
       $(`#${elementId}`).removeClass(boardThemes.getNames()).addClass(style);
-    }
-    const updatePieceStyle = (style) => {
+    });
+    listen('pieceSet', (style) => {
       $(`#${elementId}`).removeClass(pieceThemes.getNames()).addClass(style);
-    };
-    updateBoardStyle(userSettings.get('boardTheme'));
-    updatePieceStyle(userSettings.get('pieceSet'));
-    userSettings.onchange('boardTheme', updateBoardStyle);
-    userSettings.onchange('pieceSet', updatePieceStyle);
+    });
+    listen('pieceAnimation', (value) => {
+      if (value == 'fast')
+        this.cg.set({animation: {enabled: true, duration: 200}});
+      else if (value == 'slow')
+        this.cg.set({animation: {enabled: true, duration: 500}});
+      else
+        this.cg.set({animation: {enabled: false}});
+    });
   }
 
   toggleOrientation() {
@@ -108,12 +113,4 @@ function getPossibleMoves(board) {
       moves.set(s, ms.map((m) => m.to));
   });
   return moves;
-}
-
-function isPieceDraggingEnabled() {
-  return ['drag', 'both'].includes(userSettings.get('movement'));
-}
-
-function isPieceSelectionEnabled() {
-  return ['click', 'both'].includes(userSettings.get('movement'));
 }

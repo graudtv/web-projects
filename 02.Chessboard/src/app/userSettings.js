@@ -12,6 +12,7 @@ function localStorageTrySet(key, value) {
 export const defaultSettings = {
   theme: 'dark',
   movement: 'both',
+  pieceAnimation: 'fast',
   boardTheme: 'blue',
   pieceSet: 'cburnett',
 };

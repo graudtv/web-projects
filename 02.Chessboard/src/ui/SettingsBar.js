@@ -64,6 +64,10 @@ export class SettingsBar extends HTMLElement {
             ${createButtonGroup('movement', ['drag', 'click', 'both'])}
           </li>
           <li class="nav-item mb-2">
+            <h6>Piece animation</h6>
+            ${createButtonGroup('pieceAnimation', ['disabled', 'slow', 'fast'])}
+          </li>
+          <li class="nav-item mb-2">
             <h6>Board theme: <span class="fw-normal cur-board-theme-name">${curBoardTheme}</span></h6>
             <div class="w-100 d-flex flex-wrap row-gap-2" style="column-gap: 2.5%">
               ${boardThemesHTML}
@@ -83,7 +87,7 @@ export class SettingsBar extends HTMLElement {
       </div>
     `);
 
-    ['theme', 'movement'].forEach(key => {
+    ['theme', 'movement', 'pieceAnimation'].forEach(key => {
       $(this).find(`input[type="radio"][name="${namespace}-${key}"]`).click(function() {
         userSettings.set(key, $(this).attr('value'));
       });
