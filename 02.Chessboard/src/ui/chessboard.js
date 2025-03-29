@@ -1,7 +1,7 @@
 import { Chess, SQUARES } from 'chess.js';
 import { Chessground } from 'chessground';
 import { userSettings } from '../app/userSettings.js'
-import { boardThemes } from './themes.js'
+import { boardThemes, pieceThemes } from './themes.js'
 
 export class ChessBoardUI {
   moveEventListeners = []
@@ -24,12 +24,16 @@ export class ChessBoardUI {
         selectable: { enabled: isPieceSelectionEnabled() }
       });
     });
-    const updateBoardStyle = (boardStyle) => {
-      const allStyles = boardThemes.map(({name}) => name);
-      $(`#${elementId}`).removeClass(allStyles).addClass(boardStyle);
+    const updateBoardStyle = (style) => {
+      $(`#${elementId}`).removeClass(boardThemes.getNames()).addClass(style);
     }
-    userSettings.onchange('boardStyle', updateBoardStyle);
-    updateBoardStyle(userSettings.get('boardStyle'));
+    const updatePieceStyle = (style) => {
+      $(`#${elementId}`).removeClass(pieceThemes.getNames()).addClass(style);
+    };
+    updateBoardStyle(userSettings.get('boardTheme'));
+    updatePieceStyle(userSettings.get('pieceSet'));
+    userSettings.onchange('boardTheme', updateBoardStyle);
+    userSettings.onchange('pieceSet', updatePieceStyle);
   }
 
   toggleOrientation() {

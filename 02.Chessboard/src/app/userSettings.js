@@ -12,7 +12,8 @@ function localStorageTrySet(key, value) {
 export const defaultSettings = {
   theme: 'dark',
   movement: 'both',
-  boardStyle: 'blue',
+  boardTheme: 'blue',
+  pieceSet: 'cburnett',
 };
 
 /* - Container of user settings
@@ -26,7 +27,7 @@ export const userSettings = {
 
   get(key) {
     if (!defaultSettings.hasOwnProperty(key))
-      throw new Error(`invalid setting '{key}'`);
+      throw new Error(`invalid setting '${key}'`);
     if (!currentSettings.hasOwnProperty(key)) {
       let value = localStorage.getItem(`settings-${key}`);
       if (!value) {

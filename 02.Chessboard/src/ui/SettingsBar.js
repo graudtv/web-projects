@@ -1,11 +1,12 @@
 import { userSettings } from '../app/userSettings.js'
-import { boardThemes } from '../ui/themes.js'
+import { boardThemes, pieceThemes } from '../ui/themes.js'
 
 export class SettingsBar extends HTMLElement {
   _render() {
     const namespace = 'settings';
     const capitalizeFirstLetter = str => str.charAt(0).toUpperCase() + str.slice(1);
-    const curBoardStyle = userSettings.get('boardStyle');
+    const curBoardTheme = userSettings.get('boardTheme');
+    const curPieceSet = userSettings.get('pieceSet');
 
     const createButtonGroup = (key, values) => {
       const curValue = userSettings.get(key);
@@ -22,13 +23,29 @@ export class SettingsBar extends HTMLElement {
       `;
     };
 
-    const boardThemesHTML = boardThemes.map(({name, image}) => `
-      <button class="overflow-hidden border ${name === curBoardStyle ? 'border-primary border-3' : 'border-secondary-subtle'} m-0 p-0"
-              style="width: 20%; aspect-ratio: 1"
-              data-settings-key="boardStyle" data-settings-value="${name}">
-        <img src="${image}" style="width: 402%; height: 402%">
+    const boardThemesHTML = boardThemes.themes.map(({name, image}) => `
+      <button class="overflow-hidden m-0 p-0 border-0 position-relative"
+              style="width: 18%; aspect-ratio: 1"
+              data-settings-key="boardTheme" data-settings-value="${name}">
+        <img src="${image}" style="width: 400%; height: 400%">
+        <div class="border ${name === curBoardTheme ? 'border-primary border-3' : 'border-secondary-subtle'} position-absolute top-0 start-0 w-100 h-100"></div>
       </button>
     `).join('');
+
+    const pieceThemesHTML = pieceThemes.themes.map(({name, theme}) => {
+      return `
+        <button class="overflow-hidden m-0 p-0 border-0 position-relative"
+                style="width: 18%; aspect-ratio: 1;"
+                data-settings-key="pieceSet" data-settings-value="${name}">
+          <img src="${boardThemes.getImage(curBoardTheme)}" style="width: 400%; height: 400%" class="position-absolute top-0 start-0 cur-board-theme">
+          <img src="${theme.getImage('q')}" class="position-absolute w-50 h-50 top-0 start-0">
+          <img src="${theme.getImage('n')}" class="position-absolute w-50 h-50 top-0 end-0">
+          <img src="${theme.getImage('N')}" class="position-absolute w-50 h-50 bottom-0 start-0">
+          <img src="${theme.getImage('Q')}" class="position-absolute w-50 h-50 bottom-0 end-0">
+          <div class="border ${name === curPieceSet ? 'border-primary border-3' : 'border-secondary-subtle'} position-absolute top-0 start-0 w-100 h-100"></div>
+        </button>
+      `;
+    }).join('');
 
 
     $(this).addClass('offcanvas offcanvas-end').attr('tabindex', '-1').html(`
@@ -47,9 +64,15 @@ export class SettingsBar extends HTMLElement {
             ${createButtonGroup('movement', ['drag', 'click', 'both'])}
           </li>
           <li class="nav-item mb-2">
-            <h6>Board style</h6>
-            <div class="w-100 d-flex flex-wrap gap-2">
+            <h6>Board theme: <span class="fw-normal cur-board-theme-name">${curBoardTheme}</span></h6>
+            <div class="w-100 d-flex flex-wrap row-gap-2" style="column-gap: 2.5%">
               ${boardThemesHTML}
+            </div>
+          </li>
+          <li class="nav-item mb-2">
+            <h6>Piece set: <span class="fw-normal cur-piece-set-name">${curPieceSet}</span></h6>
+            <div class="w-100 d-flex flex-wrap row-gap-2" style="column-gap: 2.5%">
+              ${pieceThemesHTML}
             </div>
           </li>
           <hr>
@@ -65,12 +88,23 @@ export class SettingsBar extends HTMLElement {
         userSettings.set(key, $(this).attr('value'));
       });
     });
-    $(this).find('button[data-settings-key="boardStyle"').click(function() {
-      $(this).siblings().removeClass('border-primary border-3').addClass('border-secondary-subtle');
-      $(this).addClass('border-primary border-3').removeClass('border-secondary-subtle');
-      userSettings.set('boardStyle', $(this).attr('data-settings-value'));
+    const $settings = $(this);
+    $settings.find('button[data-settings-key="boardTheme"').click(function() {
+      const theme = $(this).attr('data-settings-value');
+      $(this).siblings().children('div.border').removeClass('border-primary border-3').addClass('border-secondary-subtle');
+      $(this).children('div.border').addClass('border-primary border-3').removeClass('border-secondary-subtle');
+      $settings.find('img.cur-board-theme').attr('src', boardThemes.getImage(theme));
+      $settings.find('span.cur-board-theme-name').text(theme);
+      userSettings.set('boardTheme', theme);
     });
-    $(this).find('button[data-btn-id="reset"]').click(() => {
+    $settings.find('button[data-settings-key="pieceSet"').click(function() {
+      const theme = $(this).attr('data-settings-value');
+      $(this).siblings().children('div.border').removeClass('border-primary border-3').addClass('border-secondary-subtle');
+      $(this).children('div.border').addClass('border-primary border-3').removeClass('border-secondary-subtle');
+      $settings.find('span.cur-piece-set-name').text(theme);
+      userSettings.set('pieceSet', theme);
+    });
+    $settings.find('button[data-btn-id="reset"]').click(() => {
       userSettings.reset();
       this._render();
     });
