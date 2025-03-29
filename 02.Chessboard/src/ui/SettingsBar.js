@@ -3,9 +3,24 @@ import { boardThemes } from '../ui/themes.js'
 
 export class SettingsBar extends HTMLElement {
   _render() {
-    const curTheme = userSettings.get('theme');
-    const curMovement = userSettings.get('movement');
+    const namespace = 'settings';
+    const capitalizeFirstLetter = str => str.charAt(0).toUpperCase() + str.slice(1);
     const curBoardStyle = userSettings.get('boardStyle');
+
+    const createButtonGroup = (key, values) => {
+      const curValue = userSettings.get(key);
+      const buttons = values.map(value => `
+        <input type="radio" class="btn-check" name="${namespace}-${key}"
+               id="${namespace}-${key}-${value}" value="${value}" autocomplete="off"
+               ${value === curValue ? 'checked' : ''}>
+        <label class="btn btn-outline-primary" for="${namespace}-${key}-${value}">${capitalizeFirstLetter(value)}</label>
+      `).join('');
+      return `
+        <div class="btn-group w-100" role="group" aria-label="select ${key}">
+          ${buttons}
+        </div>
+      `;
+    };
 
     const boardThemesHTML = boardThemes.map(({name, image}) => `
       <button class="overflow-hidden border ${name === curBoardStyle ? 'border-primary border-3' : 'border-secondary-subtle'} m-0 p-0"
@@ -14,6 +29,7 @@ export class SettingsBar extends HTMLElement {
         <img src="${image}" style="width: 402%; height: 402%">
       </button>
     `).join('');
+
 
     $(this).addClass('offcanvas offcanvas-end').attr('tabindex', '-1').html(`
       <div class="offcanvas-header">
@@ -24,33 +40,11 @@ export class SettingsBar extends HTMLElement {
         <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
           <li class="nav-item mb-2">
             <h6>Theme</h6>
-            <div class="btn-group w-100" role="group" aria-label="Select theme">
-              <input type="radio" class="btn-check" name="settings-theme"
-                     id="settings-theme-light" value="light" autocomplete="off"
-                     ${curTheme === 'light' ? 'checked' : ''}>
-              <label class="btn btn-outline-primary" for="settings-theme-light">Light</label>
-              <input type="radio" class="btn-check" name="settings-theme"
-                     id="settings-theme-dark" value="dark" autocomplete="off"
-                     ${curTheme === 'dark' ? 'checked' : ''}>
-              <label class="btn btn-outline-primary" for="settings-theme-dark">Dark</label>
-            </div>
+            ${createButtonGroup('theme', ['light', 'dark'])}
           </li>
           <li class="nav-item mb-2">
             <h6>Piece movement</h6>
-            <div class="btn-group w-100" role="group" aria-label="Select piece movement style">
-              <input type="radio" class="btn-check" name="settings-movement"
-                     id="settings-movement-drag" value="drag" autocomplete="off"
-                     ${curMovement === 'drag' ? 'checked' : ''}>
-              <label class="btn btn-outline-primary" for="settings-movement-drag">Drag</label>
-              <input type="radio" class="btn-check" name="settings-movement"
-                     id="settings-movement-click" value="click" autocomplete="off"
-                     ${curMovement === 'click' ? 'checked' : ''}>
-              <label class="btn btn-outline-primary" for="settings-movement-click">Click</label>
-              <input type="radio" class="btn-check" name="settings-movement"
-                     id="settings-movement-both" value="both" autocomplete="off"
-                     ${curMovement === 'both' ? 'checked' : ''}>
-              <label class="btn btn-outline-primary" for="settings-movement-both">Both</label>
-            </div>
+            ${createButtonGroup('movement', ['drag', 'click', 'both'])}
           </li>
           <li class="nav-item mb-2">
             <h6>Board style</h6>
@@ -66,11 +60,10 @@ export class SettingsBar extends HTMLElement {
       </div>
     `);
 
-    $(this).find('input[type="radio"][name="settings-theme"]').click(function() {
-      userSettings.set('theme', $(this).attr('value'));
-    });
-    $(this).find('input[type="radio"][name="settings-movement"]').click(function() {
-      userSettings.set('movement', $(this).attr('value'));
+    ['theme', 'movement'].forEach(key => {
+      $(this).find(`input[type="radio"][name="${namespace}-${key}"]`).click(function() {
+        userSettings.set(key, $(this).attr('value'));
+      });
     });
     $(this).find('button[data-settings-key="boardStyle"').click(function() {
       $(this).siblings().removeClass('border-primary border-3').addClass('border-secondary-subtle');
