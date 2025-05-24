@@ -8,12 +8,13 @@ import '../assets/components.css'
 import '../assets/chessground.css'
 import './ui/NavBar.js'
 
-import { Chess } from 'chess.js';
+import { Chess } from 'chess.js'
 import { movesToFEN, emptyBoardFEN, initialPositionFEN } from './chess/utils.js'
-import { ChessboardUI } from './ui/ChessboardUI.js';
-import { SimpleMoveTableUI } from './ui/SimpleMoveTableUI.js';
-import { userSettings } from './app/userSettings.js';
-import { boardThemes } from './ui/themes.js';
+import { ChessboardUI } from './ui/ChessboardUI.js'
+import { SimpleMoveTableUI } from './ui/SimpleMoveTableUI.js'
+import { userSettings } from './app/userSettings.js'
+import { boardThemes } from './ui/themes.js'
+import { evaluate } from './mfce/mfce.js'
 
 function getFEN() {
   return FENInput.value || FENInput.placeholder;
@@ -35,11 +36,18 @@ $(document).ready(() => {
   const mainBoard = new ChessboardUI('main-board');
   const mainMoveTable = new SimpleMoveTableUI('main-pgn-table');
 
+  const runEvaluation = (FEN) => {
+    evaluate({FEN: FEN, depth: 5})
+      .then((res) => console.log("evaluation:", res))
+      .catch((err) => console.log("evaluation error:", err));
+  }
+
   const resetToFEN = (FEN) => {
     clearAlerts();
     $(FENInput).val(FEN);
     mainBoard.resetToFEN(FEN);
     mainMoveTable.reset();
+    runEvaluation(FEN);
   };
 
   const resetToPGN = (moveList) => {
@@ -52,6 +60,7 @@ $(document).ready(() => {
     mainMoveTable.reset(moveList);
     mainMoveTable.setCurrentMove(moveList.length - 1);
     mainMoveTable.focusBottom(moveList.length - 1);
+    runEvaluation(FEN);
   }
 
   $('#btn-starting-position').click(() => {
@@ -72,10 +81,11 @@ $(document).ready(() => {
         $(this).html('<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Loading...');
     }, 500);
 
+    const puzzleId = "sHTlA"; // mateIn1
     //const puzzleId = "Gy5j7";
     //const puzzleId = "Pvv9d";
     //const puzzleId = "next";
-    const puzzleId = "next?angle=mate";
+    //const puzzleId = "next?angle=mateIn1";
     $.getJSON(`https://lichess.org/api/puzzle/${puzzleId}`, data => {
       isLoaded = true;
       $(this).text(initialText);
@@ -95,12 +105,14 @@ $(document).ready(() => {
     const FEN = mainMoveTable.getCurrentFEN();
     mainBoard.resetToFEN(FEN);
     $(FENInput).val(FEN);
+    runEvaluation(FEN);
     clearAlerts();
   });
 
   mainBoard.addMoveEventListener(mv => {
     mainMoveTable.pushMove(mv.san);
-    $(FENInput).val(mainBoard.board.FEN);
+    $(FENInput).val(mainBoard.board.fen());
+    runEvaluation(mainBoard.board.fen());
     clearAlerts();
     if (mainBoard.board.isCheckmate())
       showAlert("Checkmate!", "success");
@@ -120,4 +132,5 @@ $(document).ready(() => {
     }
   });
   resetToFEN(FENUrlParam ? FENUrlParam : getFEN());
+
 });
