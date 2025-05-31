@@ -1,8 +1,8 @@
-const keywords = [ 'sin', 'cos', 'tan', 'asin', 'acos', 'atan'];
+const keywords = [ 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'pow2', 'pow3'];
 
 const reNumber = /^\d+([.]\d*)?/;
 const reKeyword = new RegExp("^" + keywords.map(k => '(' + k + ')').join('|'));
-const reOperator = /[*+-\/()]/;
+const reOperator = /^[*+-\/^()]/;
 
 export class InternalError extends Error {
   constructor(message) {
@@ -29,7 +29,7 @@ class Lexer {
     } else if ((match = this.text.match(reKeyword))) {
       token = { value: match[0], isNumber: false };
     } else {
-      throw new SyntaxError(`Lexer failed at '{this.text}'`);
+      throw new SyntaxError(`Lexer failed at '${this.text}'`);
     }
     this.text = this.text.slice(match[0].length).trimStart();
     return token;
@@ -45,9 +45,19 @@ class Lexer {
 //      | additive_expression '+' multiplicative_expression
 //      | additive_expression '-' multiplicative_expression
 // multiplicative_expression
-//      : primary_expression
-//      | multiplicative_expression '*' primary_expression
-//      | multiplicative_expression '/' primary_expression
+//      : func_expression
+//      | multiplicative_expression '*' func_expression
+//      | multiplicative_expression '/' func_expression
+// func_expression
+//      : 'sin' func_expression
+//      | 'cos' func_expression
+//      ...
+//      | pow_expression
+// pow_expression
+//      : pow_expression POW2
+//      | pow_expression POW3
+//      | pow_expression '^' primary_expression
+//      | primary_expression
 // primary_expression
 //      : '(' expression ')'
 //      | NUMBER
@@ -86,14 +96,47 @@ class Evaluator {
   }
 
   evalMultiplicativeExpression() {
-    let value = this.evalPrimaryExpression();
+    let value = this.evalFuncExpression();
     while (this.curTok && (this.curTok.value === '*' || this.curTok.value === '/')) {
       const isMul = (this.curTok.value === '*');
       this.curTok = this.lexer.nextToken();
       if (isMul)
-        value *= this.evalPrimaryExpression();
+        value *= this.evalFuncExpression();
       else
-        value /= this.evalPrimaryExpression();
+        value /= this.evalFuncExpression();
+    }
+    return value;
+  }
+
+  evalFuncExpression() {
+    if (this.curTok.value === 'sin') {
+      this.curTok = this.lexer.nextToken();
+      return Math.sin(this.evalFuncExpression());
+    } else if (this.curTok.value === 'cos') {
+      this.curTok = this.lexer.nextToken();
+      return Math.cos(this.evalFuncExpression());
+    } else if (this.curTok.value === 'tan') {
+      this.curTok = this.lexer.nextToken();
+      return Math.tan(this.evalFuncExpression());
+    } else {
+      return this.evalPowExpression();
+    }
+  }
+
+  evalPowExpression() {
+    let value = this.evalPrimaryExpression();
+    while (this.curTok && ['pow2', 'pow3', '^'].includes(this.curTok.value)) {
+      if (this.curTok.value === 'pow2') {
+        this.curTok = this.lexer.nextToken();
+        value = value * value;
+      } else if (this.curTok.value === 'pow3') {
+        this.curTok = this.lexer.nextToken();
+        value = value * value * value;
+      } else {
+        this.curTok = this.lexer.nextToken();
+        const exp = this.evalPrimaryExpression();
+        value = Math.pow(value, exp);
+      }
     }
     return value;
   }
@@ -114,18 +157,6 @@ class Evaluator {
     }
     this.throwExpectationError("expression");
   }
-}
-
-
-/* for debugging */
-function tokenize(text) {
-  const lexer = new Lexer(text);
-  const tokens = [];
-  let token = null;
-  while ((token = lexer.nextToken())) {
-    tokens.push(token);
-  }
-  return tokens;
 }
 
 export default function evalutate(text) {

@@ -265,7 +265,7 @@ const encoding = {
         '  x  ' +
         'xxxxx',
 
-  'pow':
+  '^':
         '  x  ' +
         ' x x ' +
         'x   x' +

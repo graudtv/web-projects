@@ -35,7 +35,7 @@ const Controls = ({onPress}) => {
         <Button text="√"   onPress={action('sqrt2')} />
         <Button text="x²"  onPress={action('pow2')} />
         <Button text="x³"  onPress={action('pow3')} altText="∛" />
-        <Button text="^"   onPress={action('pow')} altText={<><sup>x</sup>√</>} />
+        <Button text="^"   onPress={action('^')} altText={<><sup>x</sup>√</>} />
         <Button text="log" onPress={action('log')} altText={<>10<sup>x</sup></>}/>
         <Button text="ln"  onPress={action('ln')} altText={<>e<sup>x</sup></>} />
       </div>
@@ -93,9 +93,10 @@ const Screen = ({mode = 'enabled', input = '', resultText = '', exponentValue = 
                  pixelIndicatorCount = PIXEL_INDICATOR_COUNT,
                  segmentIndicatorCount = SEGMENT_INDICATOR_COUNT
 }) => {
-  const inputText = input.reduce((text, item) => text + item, '');
+  const inputText = input.flat();
   const cursorIdx = input.slice(0, cursorPosition).reduce((len, item) => len + item.length, 0);
 
+  /* Calculate visible part of input */
   let lbegin = cursorIdx - pixelIndicatorCount + 1;
   if (lbegin < 0)
     lbegin = 0;
@@ -106,10 +107,10 @@ const Screen = ({mode = 'enabled', input = '', resultText = '', exponentValue = 
   const rend = rbegin + rsize;
   const mid = cursorVisible ? '_' :
               (cursorIdx < inputText.length) ? inputText[cursorIdx] : ' ';
-  const visibleInput = inputText.slice(lbegin, lend) + mid + inputText.slice(rbegin, rend);
+  const visibleInput = inputText.slice(lbegin, lend).concat(mid).concat(inputText.slice(rbegin, rend));
 
-  const leftArrowEnabled = (lbegin > 0);
-  const rightArrowEnabled = (rend <= inputText.length);
+  const leftArrowEnabled = (mode === 'enabled') && (lbegin > 0);
+  const rightArrowEnabled = (mode === 'enabled') && (rend <= inputText.length);
 
   const leftArrowColor = leftArrowEnabled ? 'var(--pixel-visible)' : 'var(--pixel-invisible)';
   const rightArrowColor = rightArrowEnabled ? 'var(--pixel-visible)' : 'var(--pixel-invisible)';
@@ -139,7 +140,26 @@ const Screen = ({mode = 'enabled', input = '', resultText = '', exponentValue = 
       </div>
     </div>
   );
-}
+};
+
+
+/*
+class InputBuffer {
+  empty() {
+    this.items = [];
+  }
+  insertItem(item, position) {
+    copy.splice(cursorPosition, 1, item);
+
+  }
+  const inputItem = (item) => {
+    const copy = [...input];
+    copy.splice(cursorPosition, 1, item);
+    setInput(copy);
+    setCursorPosition(cursorPosition + 1);
+  };
+};
+*/
 
 const Calculator = () => {
   /* modes:
@@ -170,11 +190,7 @@ const Calculator = () => {
     return () => document.removeEventListener('keydown', handleKeyPress);
   });
 
-  const stopCursorBlinking = () => {
-    if (cursorIntervalRef.current)
-      clearInterval(cursorIntervalRef.current);
-  }
-
+  /* Start/restart cursor blinking */
   const startCursorBlinking = () => {
     stopCursorBlinking();
     let isVisible = true; // cursorVisible doesn't reflect latest state, separate variable required
@@ -183,6 +199,11 @@ const Calculator = () => {
       setCursorVisible(isVisible);
     }, CURSOR_BLINK_DURATION);
     setCursorVisible(true);
+  };
+
+  const stopCursorBlinking = () => {
+    if (cursorIntervalRef.current)
+      clearInterval(cursorIntervalRef.current);
   };
 
   const reset = () => {
@@ -194,19 +215,18 @@ const Calculator = () => {
     setExponentValue(0);
     setCursorPosition(0);
     startCursorBlinking();
-  }
+  };
 
   const setResult = (value) => {
     const { baseValue, exponentValue } = decomposeFloat(value, SEGMENT_INDICATOR_COUNT - 1);
     setResultText(baseValue.includes('.') ? baseValue : (baseValue + '.'));
     setExponentValue(exponentValue);
     // TODO: check if exponent > 99
-  }
+  };
 
   const calculateResult = () => {
     try {
-      const res = evaluate(input.reduce((text, item) => text + item, ''));
-      setResult(res);
+      setResult(evaluate(input.flat().join('')));
     } catch (e) {
       if (e instanceof SyntaxError) {
         console.log("syntax error:", e.message);
@@ -217,7 +237,7 @@ const Calculator = () => {
       }
       setMode('error');
     }
-  }
+  };
 
   const handleKeyPress = (e) => {
     const key = e.code;
@@ -249,8 +269,8 @@ const Calculator = () => {
   };
 
   const handleButtonPress = (button) => {
-    if ('0123456789+-/*.()'.split('').includes(button)) {
-      inputItem(button);
+    if ('0123456789+-/*.()^'.split('').includes(button)) {
+      inputItem([button]);
     } else if (button === 'DEL') {
       if (input.length > 0) {
         const newInput = input.slice(0, -1);
@@ -266,13 +286,13 @@ const Calculator = () => {
       if (shiftEnabled) {
         setMode('disabled');
       } else {
-        if (mode === 'error') {
+        if (mode === 'error')
           setMode('enabled');
-          setResultText('0.');
-        }
         setInput([]);
         setCursorPosition(0);
         startCursorBlinking();
+        setResultText('0.');
+        setExponentValue(0);
       }
     } else if (button === 'ON') {
       reset();
@@ -281,9 +301,11 @@ const Calculator = () => {
       stopCursorBlinking();
     } else if (['sin', 'cos', 'tan'].includes(button)) {
       const item = hypEnabled ? (button + 'h ') : (button + ' ');
-      inputItem(item);
+      inputItem(item.split(''));
     } else if (['ln', 'log'].includes(button)) {
-      inputItem(button + ' ');
+      inputItem((button + ' ').split(''));
+    } else if (['pow2', 'pow3'].includes(button)) {
+      inputItem([button]);
     } else if (button === 'leftArrow') {
       if (cursorPosition > 0)
         setCursorPosition(cursorPosition - 1);
