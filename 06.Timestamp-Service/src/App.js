@@ -1,8 +1,6 @@
 import './App.css';
 import { useState, useEffect } from 'react';
 
-const API_URL = 'http://127.0.0.1:3000/api';
-
 const DateBox = ({date}) => {
   return (
     <div>
@@ -17,11 +15,10 @@ const App = () => {
   const [curDate, setCurDate] = useState({});
   const [timerDate, setTimerDate] = useState({});
   const [customDate, setCustomDate] = useState({});
-  const date = {};
 
   async function fetchTime(time, callback) {
     try {
-      const response = await fetch(API_URL + '/' + time);
+      const response = await fetch('/api/' + time);
       const json = await response.json();
       callback(json);
     } catch (e) {
@@ -58,9 +55,9 @@ const App = () => {
       <input type="date" onChange={onCustomDateUpdate}/>
       <DateBox date={customDate} />
       <h2>API</h2>
-      <p><a href={API_URL + '/now'}>[service]/api/now</a></p>
-      <p><a href={API_URL + '/2015-12-25'}>[service]/api/2015-12-25</a></p>
-      <p><a href={API_URL + '/1451001600000'}>[service]/api/1451001600000</a></p>
+      <p><a href={'/api/now'}>[service]/api/now</a></p>
+      <p><a href={'/api/2015-12-25'}>[service]/api/2015-12-25</a></p>
+      <p><a href={'/api/1451001600000'}>[service]/api/1451001600000</a></p>
     </>
   );
 };
