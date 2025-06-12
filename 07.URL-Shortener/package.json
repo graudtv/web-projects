@@ -1,0 +1,25 @@
+{
+  "name": "url-shortener",
+  "version": "1.0.0",
+  "description": "",
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "npm run build && NODE_ENV=production node server.js",
+    "server": "node --watch server.js",
+    "client": "npm --prefix=client run start",
+    "build": "npm --prefix=client run build"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mongoose": "^8.15.1",
+    "url-shortener-client": "file:client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
