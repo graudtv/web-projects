@@ -1,0 +1,54 @@
+.chessboard-popup {
+  background: #333;
+  color: white;
+  display: none;
+  width: 500px;
+  height: 500px;
+}
+
+.chessboard-popup[data-show] {
+  display: block;
+}
+
+.chessboard-popup > .arrow,
+.chessboard-popup > .arrow::before {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  z-index: -999;
+}
+
+.chessboard-popup > .arrow {
+  visibility: hidden;
+}
+
+.chessboard-popup > .arrow::before {
+  visibility: visible;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.chessboard-popup[data-popper-placement^='top'] > .arrow {
+  bottom: -4px;
+}
+
+.chessboard-popup[data-popper-placement^='bottom'] > .arrow {
+  top: -4px;
+}
+
+.chessboard-popup[data-popper-placement^='left'] > .arrow {
+  right: -4px;
+}
+
+.chessboard-popup[data-popper-placement^='right'] > .arrow {
+  left: -4px;
+}
+
+.fen {
+  color: green;
+  font-style: italic;
+}
+.fen:hover {
+  background: lightyellow;
+}

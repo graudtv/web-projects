@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+esbuild --bundle --outdir=dist --minify --sourcemap \
+        --loader:.png=file --loader:.svg=file \
+        --watch=forever --serve --servedir=. \
+        src/main.js

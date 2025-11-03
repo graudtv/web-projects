@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "dist": "scripts/dist.sh",
+    "serve": "scripts/serve.sh",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.1"
+  },
+  "dependencies": {
+    "chess.js": "^1.1.0",
+    "chessground": "^9.1.1"
+  }
+}
